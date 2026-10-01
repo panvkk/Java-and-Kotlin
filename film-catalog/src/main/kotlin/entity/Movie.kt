@@ -1,13 +1,6 @@
 package org.example.entity
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
-import jakarta.persistence.Table
+import jakarta.persistence.*
 
 @Entity
 @Table(name = "movies_table")
@@ -18,6 +11,8 @@ data class Movie (
     val year: Int,
     val rating: Float,
     @ManyToOne
-    @JoinColumn(name = "director_id", referencedColumnName = "id")
-    val director: Director
+    @JoinColum()
+    val directorId: Long,
+    @Column("director_name")
+    val directorName: String
 )
