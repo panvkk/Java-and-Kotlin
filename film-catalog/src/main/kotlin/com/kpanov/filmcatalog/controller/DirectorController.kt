@@ -1,9 +1,9 @@
-package controller
+package com.kpanov.filmcatalog.controller
 
-import controller.mapper.toDto
-import controller.dto.DirectorDto
-import controller.dto.NewDirectorDto
-import org.example.service.DirectorService
+import com.kpanov.filmcatalog.controller.dto.DirectorDto
+import com.kpanov.filmcatalog.controller.dto.NewDirectorDto
+import com.kpanov.filmcatalog.controller.mapper.toDto
+import com.kpanov.filmcatalog.service.DirectorService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody

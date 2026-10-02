@@ -1,6 +1,6 @@
-package org.example.repository
+package com.kpanov.filmcatalog.repository
 
-import org.example.entity.Director
+import com.kpanov.filmcatalog.repository.entity.Director
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface DirectorRepository : JpaRepository<Director, Long> {

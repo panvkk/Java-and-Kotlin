@@ -6,7 +6,7 @@ plugins {
     kotlin("plugin.jpa") version "2.3.21"
 }
 
-group = "org.example"
+group = "com.kpanov.filmcatalog"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -15,7 +15,9 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
+//    implementation("com.scalar.maven:scalar:1.64.1")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     runtimeOnly("com.h2database:h2")

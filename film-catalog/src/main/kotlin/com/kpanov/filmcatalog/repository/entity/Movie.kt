@@ -1,4 +1,4 @@
-package org.example.entity
+package com.kpanov.filmcatalog.repository.entity
 
 import jakarta.persistence.*
 
@@ -8,7 +8,8 @@ data class Movie (
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     val title: String,
-    val year: Int,
+    @Column("release_year")
+    val releaseYear: Int,
     val rating: Float,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "director_id", nullable = false) // пока не совсем понимаю когда надо ставить nullable, а когда нет

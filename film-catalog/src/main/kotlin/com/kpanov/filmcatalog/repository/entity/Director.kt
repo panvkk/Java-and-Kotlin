@@ -1,4 +1,4 @@
-package org.example.entity
+package com.kpanov.filmcatalog.repository.entity
 
 import jakarta.persistence.*
 

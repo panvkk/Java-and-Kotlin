@@ -1,9 +1,9 @@
-package controller
+package com.kpanov.filmcatalog.controller
 
-import controller.dto.MovieDto
-import controller.dto.NewMovieDto
-import controller.mapper.toDto
-import org.example.service.MovieService
+import com.kpanov.filmcatalog.controller.dto.MovieDto
+import com.kpanov.filmcatalog.controller.dto.NewMovieDto
+import com.kpanov.filmcatalog.controller.mapper.toDto
+import com.kpanov.filmcatalog.service.MovieService
 import org.springframework.web.bind.annotation.*
 
 @RestController

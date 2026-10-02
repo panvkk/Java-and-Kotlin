@@ -1,7 +1,7 @@
-package org.example.service
+package com.kpanov.filmcatalog.service
 
-import org.example.entity.Director
-import org.example.repository.DirectorRepository
+import com.kpanov.filmcatalog.repository.DirectorRepository
+import com.kpanov.filmcatalog.repository.entity.Director
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.NoSuchElementException

@@ -1,7 +1,7 @@
-package org.example.service
+package com.kpanov.filmcatalog.service
 
-import org.example.entity.Movie
-import org.example.repository.MovieRepository
+import com.kpanov.filmcatalog.repository.entity.Movie
+import com.kpanov.filmcatalog.repository.MovieRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import kotlin.random.Random
@@ -13,7 +13,7 @@ class MovieService(
     private val directorService: DirectorService
 ) {
     fun getMoviesByTitle(title: String?) : List<Movie>
-        = movieRepository.findMoviesByTitle(title ?: "")
+        = movieRepository.findMoviesByTitleContaining(title ?: "")
 
     fun getDirectorMovies(directorId: Long) : List<Movie>
         = movieRepository.findMoviesByDirectorId(directorId)
@@ -37,7 +37,7 @@ class MovieService(
 
         val movie = Movie(
             title = title,
-            year = year,
+            releaseYear = year,
             rating = movieRating,
             director = director
         )

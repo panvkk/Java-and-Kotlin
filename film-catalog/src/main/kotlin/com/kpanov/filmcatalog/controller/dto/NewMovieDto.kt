@@ -1,4 +1,4 @@
-package controller.dto
+package com.kpanov.filmcatalog.controller.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
