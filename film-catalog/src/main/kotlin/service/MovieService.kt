@@ -28,7 +28,7 @@ class MovieService(
     fun createMovie(
         title: String,
         year: Int,
-        rating: Float?,
+        rating: Float? = null,
         directorId: Long
     ) {
         val director = directorService.getDirectorById(directorId)
@@ -39,7 +39,7 @@ class MovieService(
             title = title,
             year = year,
             rating = movieRating,
-            director = director 
+            director = director
         )
 
         movieRepository.save(movie)

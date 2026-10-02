@@ -1,24 +1,31 @@
 package controller
 
-import org.example.entity.Movie
-import org.example.repository.MovieRepository
+import controller.dto.MovieDto
+import controller.dto.NewMovieDto
+import controller.mapper.toDto
 import org.example.service.MovieService
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/catalog/")
+@RequestMapping("/api/v1/")
 class MovieController(
     private val movieService: MovieService
 ) {
     @GetMapping("/movies")
     fun getMoviesByTitle(
         @RequestParam(value = "title", required = false) title: String?
-    ) : List<Movie> {
-        return movieService.getMoviesByTitle(title)
+    ) : List<MovieDto> {
+        return movieService.getMoviesByTitle(title).map { it.toDto() }
     }
 
-
+    @PutMapping("/create-movie")
+    fun createMovie(
+        @RequestBody newMovie: NewMovieDto
+    ) {
+        movieService.createMovie(
+            title = newMovie.title,
+            year = newMovie.year,
+            directorId = newMovie.directorId
+        )
+    }
 }

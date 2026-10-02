@@ -1,4 +1,4 @@
-package controller.handler
+package service.handler
 
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
