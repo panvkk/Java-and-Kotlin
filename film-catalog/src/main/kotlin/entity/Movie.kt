@@ -10,9 +10,7 @@ data class Movie (
     val title: String,
     val year: Int,
     val rating: Float,
-    @ManyToOne
-    @JoinColum()
-    val directorId: Long,
-    @Column("director_name")
-    val directorName: String
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "director_id", nullable = false) // пока не совсем понимаю когда надо ставить nullable, а когда нет
+    val director: Director
 )

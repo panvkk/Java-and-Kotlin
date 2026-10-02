@@ -1,11 +1,6 @@
 package org.example.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 
 @Entity
 @Table(name = "directors_table")
@@ -15,5 +10,7 @@ data class Director(
     @Column(name = "full_name")
     val fullName: String,
     @Column(name = "birth_year")
-    val birthYear: Int
+    val birthYear: Int,
+    @OneToMany(mappedBy = "director", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val movies: List<Movie> = emptyList()
 )

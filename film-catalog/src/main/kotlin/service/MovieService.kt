@@ -1,13 +1,16 @@
 package org.example.service
 
-import org.example.entity.Director
 import org.example.entity.Movie
 import org.example.repository.MovieRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import kotlin.random.Random
 
 @Service
+@Transactional(readOnly = true)
 class MovieService(
-    private val movieRepository: MovieRepository
+    private val movieRepository: MovieRepository,
+    private val directorService: DirectorService
 ) {
     fun getMoviesByTitle(title: String?) : List<Movie>
         = movieRepository.findMoviesByTitle(title ?: "")
@@ -21,10 +24,24 @@ class MovieService(
         return movieRepository.findMoviesByRatingIsGreaterThanEqual(rating)
     }
 
+    @Transactional
     fun createMovie(
         title: String,
         year: Int,
         rating: Float?,
-        director: Director
-    )
+        directorId: Long
+    ) {
+        val director = directorService.getDirectorById(directorId)
+
+        val movieRating = rating ?: (Random.nextFloat() * 10)
+
+        val movie = Movie(
+            title = title,
+            year = year,
+            rating = movieRating,
+            director = director 
+        )
+
+        movieRepository.save(movie)
+    }
 }

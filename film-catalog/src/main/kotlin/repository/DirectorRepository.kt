@@ -7,4 +7,5 @@ interface DirectorRepository : JpaRepository<Director, Long> {
 
     fun findDirectorsByFullName(directorName: String) : List<Director>
 
+    fun findDirectorById(id: Long) : Director?
 }

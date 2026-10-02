@@ -12,6 +12,4 @@ interface MovieRepository : JpaRepository<Movie, Long> {
     fun findMoviesByTitle(title: String): List<Movie>
 
     fun findMoviesByRatingIsGreaterThanEqual(minimalRating: Float): List<Movie>
-
-    fun putMovie(movie: Movie)
 }
