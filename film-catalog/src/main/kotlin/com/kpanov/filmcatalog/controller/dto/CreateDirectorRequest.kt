@@ -2,8 +2,7 @@ package com.kpanov.filmcatalog.controller.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-data class DirectorDto(
-    val id: Long = 0,
+data class CreateDirectorRequest(
     @JsonProperty("full_name")
     val fullName: String,
     @JsonProperty("birth_year")

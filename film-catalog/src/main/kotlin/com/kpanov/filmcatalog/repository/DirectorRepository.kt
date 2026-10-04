@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface DirectorRepository : JpaRepository<Director, Long> {
 
-    fun findDirectorsByFullName(directorName: String) : List<Director>
+    fun findDirectorsByFullNameContaining(directorName: String) : List<Director>
 
     fun findDirectorById(id: Long) : Director?
 }

@@ -9,7 +9,9 @@ interface MovieRepository : JpaRepository<Movie, Long> {
 
     fun findMoviesByDirectorId(directorId: Long): List<Movie>
 
-    fun findMoviesByTitleContaining(title: String): List<Movie>
+    fun findMoviesByTitleContainingAndRatingIsGreaterThanEqual(
+        title: String,
+        minimalRating: Float
+    ): List<Movie>
 
-    fun findMoviesByRatingIsGreaterThanEqual(minimalRating: Float): List<Movie>
 }

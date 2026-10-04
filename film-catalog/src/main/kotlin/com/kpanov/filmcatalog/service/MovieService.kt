@@ -12,17 +12,22 @@ class MovieService(
     private val movieRepository: MovieRepository,
     private val directorService: DirectorService
 ) {
-    fun getMoviesByTitle(title: String?) : List<Movie>
-        = movieRepository.findMoviesByTitleContaining(title ?: "")
+    fun getMovies(
+        title: String?,
+        minimalRating: Float?
+    ) : List<Movie> {
+        minimalRating?.let {
+            require(it < 0f || it > 10f) { "Rating must be between 0 and 10." }
+        }
+
+        return movieRepository.findMoviesByTitleContainingAndRatingIsGreaterThanEqual(
+            title ?: "",
+            minimalRating ?: 0f
+        )
+    }
 
     fun getDirectorMovies(directorId: Long) : List<Movie>
         = movieRepository.findMoviesByDirectorId(directorId)
-
-    fun getMoviesByRating(rating: Float) : List<Movie> {
-        require(rating < 0f || rating > 10f) { "Rating must be between 0 and 10." }
-
-        return movieRepository.findMoviesByRatingIsGreaterThanEqual(rating)
-    }
 
     @Transactional
     fun createMovie(

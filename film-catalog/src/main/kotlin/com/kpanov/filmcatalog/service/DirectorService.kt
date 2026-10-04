@@ -11,10 +11,9 @@ import java.util.NoSuchElementException
 class DirectorService(
     private val directorRepository: DirectorRepository
 ) {
-    fun getDirectors() : List<Director> = directorRepository.findAll()
 
-    fun getDirectorsByName(directorName: String) : List<Director>
-            = directorRepository.findDirectorsByFullName(directorName)
+    fun getDirectorsByName(directorName: String = "") : List<Director>
+            = directorRepository.findDirectorsByFullNameContaining(directorName)
 
     fun getDirectorById(id : Long) : Director {
         return directorRepository.findDirectorById(id)
