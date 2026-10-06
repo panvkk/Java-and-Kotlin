@@ -2,12 +2,12 @@ package com.kpanov.filmcatalog.controller.mapper
 
 import com.kpanov.filmcatalog.controller.dto.DirectorResponseDto
 import com.kpanov.filmcatalog.controller.dto.MovieResponseDto
-import com.kpanov.filmcatalog.repository.entity.Director
-import com.kpanov.filmcatalog.repository.entity.Movie
+import com.kpanov.filmcatalog.repository.entity.DirectorEntity
+import com.kpanov.filmcatalog.repository.entity.MovieEntity
 
-fun Director.toDto() = DirectorResponseDto(id = id, fullName = fullName, birthYear = birthYear)
+fun DirectorEntity.toDto() = DirectorResponseDto(id = id, fullName = fullName, birthYear = birthYear)
 
-fun Movie.toDto() = MovieResponseDto(
+fun MovieEntity.toDto() = MovieResponseDto(
     id = id,
     title = title,
     year = releaseYear,

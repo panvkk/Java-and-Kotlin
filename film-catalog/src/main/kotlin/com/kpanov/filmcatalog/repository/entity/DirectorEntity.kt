@@ -4,7 +4,7 @@ import jakarta.persistence.*
 
 @Entity
 @Table(name = "directors_table")
-data class Director(
+data class DirectorEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     @Column(name = "full_name")
@@ -12,5 +12,5 @@ data class Director(
     @Column(name = "birth_year")
     val birthYear: Int,
     @OneToMany(mappedBy = "director", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val movies: List<Movie> = emptyList()
+    val movieEntities: List<MovieEntity> = emptyList()
 )

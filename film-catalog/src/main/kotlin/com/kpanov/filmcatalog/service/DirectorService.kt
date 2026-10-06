@@ -1,10 +1,10 @@
 package com.kpanov.filmcatalog.service
 
 import com.kpanov.filmcatalog.repository.DirectorRepository
-import com.kpanov.filmcatalog.repository.entity.Director
+import com.kpanov.filmcatalog.repository.entity.DirectorEntity
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.NoSuchElementException
 
 @Service
 @Transactional(readOnly = true)
@@ -12,21 +12,21 @@ class DirectorService(
     private val directorRepository: DirectorRepository
 ) {
 
-    fun getDirectorsByName(directorName: String = "") : List<Director>
+    fun getDirectorsByName(directorName: String = "") : List<DirectorEntity>
             = directorRepository.findDirectorsByFullNameContaining(directorName)
 
-    fun getDirectorById(id : Long) : Director {
+    fun getDirectorById(id : Long) : DirectorEntity {
         return directorRepository.findDirectorById(id)
-            ?: throw NoSuchElementException("Director with id $id not found.")
+            ?: throw EntityNotFoundException("Director with id $id not found.")
     }
 
     @Transactional
     fun createDirector(
         fullName: String,
         birthYear: Int
-    ) {
-        val director = Director(fullName = fullName, birthYear = birthYear)
+    ) : DirectorEntity {
+        val directorEntity = DirectorEntity(fullName = fullName, birthYear = birthYear)
 
-        directorRepository.save(director)
+        return directorRepository.save(directorEntity)
     }
 }

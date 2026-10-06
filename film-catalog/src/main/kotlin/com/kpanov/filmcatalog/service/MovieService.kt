@@ -1,6 +1,6 @@
 package com.kpanov.filmcatalog.service
 
-import com.kpanov.filmcatalog.repository.entity.Movie
+import com.kpanov.filmcatalog.repository.entity.MovieEntity
 import com.kpanov.filmcatalog.repository.MovieRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,7 +15,7 @@ class MovieService(
     fun getMovies(
         title: String?,
         minimalRating: Float?
-    ) : List<Movie> {
+    ) : List<MovieEntity> {
         minimalRating?.let {
             require(it < 0f || it > 10f) { "Rating must be between 0 and 10." }
         }
@@ -26,7 +26,7 @@ class MovieService(
         )
     }
 
-    fun getDirectorMovies(directorId: Long) : List<Movie>
+    fun getDirectorMovies(directorId: Long) : List<MovieEntity>
         = movieRepository.findMoviesByDirectorId(directorId)
 
     @Transactional
@@ -35,18 +35,18 @@ class MovieService(
         year: Int,
         rating: Float? = null,
         directorId: Long
-    ) {
+    ) : MovieEntity {
         val director = directorService.getDirectorById(directorId)
 
         val movieRating = rating ?: (Random.nextFloat() * 10)
 
-        val movie = Movie(
+        val movieEntity = MovieEntity(
             title = title,
             releaseYear = year,
             rating = movieRating,
             director = director
         )
 
-        movieRepository.save(movie)
+        return movieRepository.save(movieEntity)
     }
 }

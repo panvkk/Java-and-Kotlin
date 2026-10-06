@@ -4,6 +4,8 @@ import com.kpanov.filmcatalog.controller.dto.DirectorResponseDto
 import com.kpanov.filmcatalog.controller.dto.CreateDirectorRequest
 import com.kpanov.filmcatalog.controller.mapper.toDto
 import com.kpanov.filmcatalog.service.DirectorService
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -20,17 +22,20 @@ class DirectorController(
     @GetMapping("/directors")
     fun getDirectors(
         @RequestParam("director_name", required = false) directorName: String
-    ) : List<DirectorResponseDto> {
-        return directorService.getDirectorsByName(directorName).map { it.toDto() }
+    ) : ResponseEntity<List<DirectorResponseDto>> {
+        val directors = directorService.getDirectorsByName(directorName).map { it.toDto() }
+        return ResponseEntity(directors, HttpStatus.OK)
     }
 
     @PostMapping("/create-director")
     fun createDirector(
         @RequestBody newDirector: CreateDirectorRequest
-    ) {
-        directorService.createDirector(
+    ) : ResponseEntity<DirectorResponseDto> {
+        val savedDirector = directorService.createDirector(
             newDirector.fullName,
             newDirector.birthYear
-        )
+        ).toDto()
+
+        return ResponseEntity(savedDirector, HttpStatus.CREATED)
     }
 }
