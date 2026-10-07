@@ -49,4 +49,9 @@ class MovieService(
 
         return movieRepository.save(movieEntity)
     }
+
+    @Transactional
+    fun deleteMovie(id: Long) {
+        movieRepository.deleteMovieById(id)
+    }
 }

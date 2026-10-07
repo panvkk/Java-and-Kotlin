@@ -29,4 +29,9 @@ class DirectorService(
 
         return directorRepository.save(directorEntity)
     }
+
+    @Transactional
+    fun deleteDirector(id: Long) {
+        directorRepository.deleteDirectorById(id)
+    }
 }

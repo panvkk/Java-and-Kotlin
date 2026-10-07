@@ -1,7 +1,7 @@
 package com.kpanov.filmcatalog.controller
 
 import com.kpanov.filmcatalog.controller.dto.MovieResponseDto
-import com.kpanov.filmcatalog.controller.dto.CreateMovieRequest
+import com.kpanov.filmcatalog.controller.dto.CreateMovieRequestDto
 import com.kpanov.filmcatalog.controller.mapper.toDto
 import com.kpanov.filmcatalog.service.MovieService
 import org.springframework.http.HttpStatus
@@ -30,9 +30,17 @@ class MovieController(
         return ResponseEntity(movies, HttpStatus.OK)
     }
 
+    @DeleteMapping("/delete-movie")
+    fun deleteMovie(
+        @RequestParam("movie_id") movieId: Long
+    ) {
+        movieService.deleteMovie(movieId)
+    }
+
+
     @PostMapping("/create-movie")
     fun createMovie(
-        @RequestBody newMovie: CreateMovieRequest
+        @RequestBody newMovie: CreateMovieRequestDto
     ) : ResponseEntity<MovieResponseDto> {
         val savedMovie = movieService.createMovie(
             title = newMovie.title,

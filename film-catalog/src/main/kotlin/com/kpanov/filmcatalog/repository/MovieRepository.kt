@@ -14,4 +14,7 @@ interface MovieRepository : JpaRepository<MovieEntity, Long> {
         minimalRating: Float
     ): List<MovieEntity>
 
+    fun deleteMovieById(id: Long)
+
+    fun deleteMoviesByDirectorId(directorId: Long)
 }

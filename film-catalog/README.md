@@ -11,9 +11,33 @@ Request:
 }
 ```
 
+## GET /api/directors/{director_id}/movies
+
+PathVariable:
+
+```
+    director_id: 123 [long]
+```
+
+Response:
+
+```
+[
+    {
+        "id": 1 [long],
+        "title": "Однажды.. в Голливуде" [string],
+        "year": 2019 [int],
+        "rating": 0.1 [float],
+        "director_id": 123 [long],
+        "director_name": "Квентин Тарантино" [string]
+    }
+]
+```
+
 ## GET /api/movies
 
 Params:
+
 ```   
     "title": "Однажды" [string]
     "minimal_rating": 8.3 [float]
@@ -33,6 +57,7 @@ Response:
     }
 ]
 ```
+
 
 ## POST /api/create-director
 

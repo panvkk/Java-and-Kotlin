@@ -8,5 +8,6 @@ interface DirectorRepository : JpaRepository<DirectorEntity, Long> {
     fun findDirectorsByFullNameContaining(directorName: String) : List<DirectorEntity>
 
     fun findDirectorById(id: Long) : DirectorEntity?
-}
 
+    fun deleteDirectorById(id: Long)
+}
