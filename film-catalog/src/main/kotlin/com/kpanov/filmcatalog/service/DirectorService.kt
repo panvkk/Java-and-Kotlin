@@ -2,6 +2,7 @@ package com.kpanov.filmcatalog.service
 
 import com.kpanov.filmcatalog.repository.DirectorRepository
 import com.kpanov.filmcatalog.repository.entity.DirectorEntity
+import com.kpanov.filmcatalog.service.model.UpdateDirectorModel
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -33,5 +34,18 @@ class DirectorService(
     @Transactional
     fun deleteDirector(id: Long) {
         directorRepository.deleteDirectorById(id)
+    }
+
+    @Transactional
+    fun updateDirector(directorId: Long, newDirector: UpdateDirectorModel) : DirectorEntity {
+        val currentDirectorEntity = directorRepository.findDirectorById(directorId)
+            ?: throw EntityNotFoundException("Director with id $directorId not found.")
+
+        val newDirectorEntity = currentDirectorEntity.copy(
+            fullName = newDirector.fullName,
+            birthYear = newDirector.birthYear
+        )
+
+        return directorRepository.save(newDirectorEntity)
     }
 }

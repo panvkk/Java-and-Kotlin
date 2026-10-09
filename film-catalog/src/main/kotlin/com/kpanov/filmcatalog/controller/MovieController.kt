@@ -2,7 +2,9 @@ package com.kpanov.filmcatalog.controller
 
 import com.kpanov.filmcatalog.controller.dto.MovieResponseDto
 import com.kpanov.filmcatalog.controller.dto.CreateMovieRequestDto
+import com.kpanov.filmcatalog.controller.dto.UpdateMovieRequestDto
 import com.kpanov.filmcatalog.controller.mapper.toDto
+import com.kpanov.filmcatalog.controller.mapper.toModel
 import com.kpanov.filmcatalog.service.MovieService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -22,7 +24,7 @@ class MovieController(
         return ResponseEntity(movies, HttpStatus.OK)
     }
 
-    @GetMapping("/directors/{director_id}/movies")
+    @GetMapping("/movies/{director_id}")
     fun getDirectorMovies(
         @PathVariable("director_id") directorId: Long)
     : ResponseEntity<List<MovieResponseDto>> {
@@ -30,15 +32,16 @@ class MovieController(
         return ResponseEntity(movies, HttpStatus.OK)
     }
 
-    @DeleteMapping("/delete-movie")
+    @DeleteMapping("/movies/{movie_id}")
     fun deleteMovie(
-        @RequestParam("movie_id") movieId: Long
-    ) {
+        @PathVariable("movie_id") movieId: Long
+    ) : ResponseEntity<Unit> {
         movieService.deleteMovie(movieId)
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
-
-    @PostMapping("/create-movie")
+    @PostMapping("/movies")
     fun createMovie(
         @RequestBody newMovie: CreateMovieRequestDto
     ) : ResponseEntity<MovieResponseDto> {
@@ -49,5 +52,15 @@ class MovieController(
         ).toDto()
 
         return ResponseEntity(savedMovie, HttpStatus.CREATED)
+    }
+
+    @PatchMapping("/movies/{movie_id}")
+    fun updateMovie(
+        @PathVariable("movie_id") movieId: Long,
+        @RequestBody newMovie: UpdateMovieRequestDto
+    ) : ResponseEntity<MovieResponseDto> {
+        val savedMovie = movieService.updateMovie(movieId, newMovie.toModel())
+
+        return ResponseEntity(savedMovie.toDto(), HttpStatus.OK)
     }
 }

@@ -9,12 +9,12 @@ interface MovieRepository : JpaRepository<MovieEntity, Long> {
 
     fun findMoviesByDirectorId(directorId: Long): List<MovieEntity>
 
+    fun findMovieById(movieId: Long): MovieEntity?
+
     fun findMoviesByTitleContainingAndRatingIsGreaterThanEqual(
         title: String,
         minimalRating: Float
     ): List<MovieEntity>
 
     fun deleteMovieById(id: Long)
-
-    fun deleteMoviesByDirectorId(directorId: Long)
 }

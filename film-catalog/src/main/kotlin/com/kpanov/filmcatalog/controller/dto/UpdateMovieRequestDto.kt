@@ -1,8 +1,7 @@
 package com.kpanov.filmcatalog.controller.dto
 
 data class UpdateMovieRequestDto(
-    val id: Long,
     val title: String,
     val year: Int,
-    val rating: Float,
+    val rating: Float
 )

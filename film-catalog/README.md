@@ -1,6 +1,8 @@
 # API
 
-## POST /api/create-movie
+# Movies
+
+## POST /api/movies
 
 Request:
 ```
@@ -11,9 +13,20 @@ Request:
 }
 ```
 
-## GET /api/directors/{director_id}/movies
+## DELETE /api/movies/{movie_id}
 
-PathVariable:
+Path Variable:
+
+```
+    movie_id: 1 [long]
+```
+
+Response: 
+// потом допишу)
+
+## GET /api/movies/{director_id}
+
+Path Variable:
 
 ```
     director_id: 123 [long]
@@ -58,8 +71,9 @@ Response:
 ]
 ```
 
+# Directors
 
-## POST /api/create-director
+## POST /api/directors
 
 Request:
 ```

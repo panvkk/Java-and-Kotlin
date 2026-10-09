@@ -1,7 +1,9 @@
 package com.kpanov.filmcatalog.service
 
-import com.kpanov.filmcatalog.repository.entity.MovieEntity
 import com.kpanov.filmcatalog.repository.MovieRepository
+import com.kpanov.filmcatalog.repository.entity.MovieEntity
+import com.kpanov.filmcatalog.service.model.UpdateMovieModel
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import kotlin.random.Random
@@ -53,5 +55,22 @@ class MovieService(
     @Transactional
     fun deleteMovie(id: Long) {
         movieRepository.deleteMovieById(id)
+    }
+
+    @Transactional
+    fun updateMovie(
+        movieId: Long,
+        newMovie: UpdateMovieModel
+    ) : MovieEntity {
+        val currentMovieEntity = movieRepository.findMovieById(movieId)
+            ?: throw EntityNotFoundException("Movie with id = $movieId not found")
+
+        val newMovieEntity = currentMovieEntity.copy(
+            title = newMovie.title,
+            rating = newMovie.rating,
+            releaseYear = newMovie.year
+        )
+
+        return movieRepository.save(newMovieEntity)
     }
 }
