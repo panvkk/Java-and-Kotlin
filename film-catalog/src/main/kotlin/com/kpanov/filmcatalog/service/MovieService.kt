@@ -2,7 +2,7 @@ package com.kpanov.filmcatalog.service
 
 import com.kpanov.filmcatalog.repository.MovieRepository
 import com.kpanov.filmcatalog.repository.entity.MovieEntity
-import com.kpanov.filmcatalog.service.model.UpdateMovieModel
+import com.kpanov.filmcatalog.service.dto.UpdateMovieModel
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,7 +19,7 @@ class MovieService(
         minimalRating: Float?
     ) : List<MovieEntity> {
         minimalRating?.let {
-            require(it < 0f || it > 10f) { "Rating must be between 0 and 10." }
+            require(it >= 0f || it <= 10f) { "Rating must be between 0 and 10." }
         }
 
         return movieRepository.findMoviesByTitleContainingAndRatingIsGreaterThanEqual(

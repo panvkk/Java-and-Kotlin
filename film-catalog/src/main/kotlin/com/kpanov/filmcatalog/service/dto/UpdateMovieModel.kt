@@ -1,4 +1,4 @@
-package com.kpanov.filmcatalog.service.model
+package com.kpanov.filmcatalog.service.dto
 
 data class UpdateMovieModel(
     val title: String,

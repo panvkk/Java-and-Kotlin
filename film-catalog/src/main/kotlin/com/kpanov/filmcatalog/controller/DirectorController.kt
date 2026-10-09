@@ -17,7 +17,7 @@ class DirectorController(
 ) {
     @GetMapping("/directors")
     fun getDirectors(
-        @RequestParam("director_name", required = false) directorName: String
+        @RequestParam("director_name", required = false) directorName: String?
     ) : ResponseEntity<List<DirectorResponseDto>> {
         val directors = directorService.getDirectorsByName(directorName).map { it.toDto() }
         return ResponseEntity(directors, HttpStatus.OK)

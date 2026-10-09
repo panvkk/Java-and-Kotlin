@@ -2,7 +2,7 @@ package com.kpanov.filmcatalog.service
 
 import com.kpanov.filmcatalog.repository.DirectorRepository
 import com.kpanov.filmcatalog.repository.entity.DirectorEntity
-import com.kpanov.filmcatalog.service.model.UpdateDirectorModel
+import com.kpanov.filmcatalog.service.dto.UpdateDirectorModel
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,8 +13,8 @@ class DirectorService(
     private val directorRepository: DirectorRepository
 ) {
 
-    fun getDirectorsByName(directorName: String = "") : List<DirectorEntity>
-            = directorRepository.findDirectorsByFullNameContaining(directorName)
+    fun getDirectorsByName(directorName: String?) : List<DirectorEntity>
+            = directorRepository.findDirectorsByFullNameContaining(directorName ?: "")
 
     fun getDirectorById(id : Long) : DirectorEntity {
         return directorRepository.findDirectorById(id)
