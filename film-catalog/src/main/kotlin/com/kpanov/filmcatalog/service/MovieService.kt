@@ -2,7 +2,13 @@ package com.kpanov.filmcatalog.service
 
 import com.kpanov.filmcatalog.repository.MovieRepository
 import com.kpanov.filmcatalog.repository.entity.MovieEntity
-import com.kpanov.filmcatalog.service.dto.UpdateMovieModel
+import com.kpanov.filmcatalog.service.model.UpdateMovieModel
+import com.kpanov.filmcatalog.util.INVALID_RATING_MESSAGE
+import com.kpanov.filmcatalog.util.MAX_RATING
+import com.kpanov.filmcatalog.util.MIN_RATING
+import com.kpanov.filmcatalog.util.MIN_RELEASE_YEAR
+import com.kpanov.filmcatalog.util.MOVIE_NOT_FOUND_BY_ID_MESSAGE
+import com.kpanov.filmcatalog.util.RATING_GENERATION_FACTOR
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,12 +25,14 @@ class MovieService(
         minimalRating: Float?
     ) : List<MovieEntity> {
         minimalRating?.let {
-            require(it >= 0f || it <= 10f) { "Rating must be between 0 and 10." }
+            require(it in MIN_RATING..MAX_RATING) {
+                INVALID_RATING_MESSAGE.format(it)
+            }
         }
 
         return movieRepository.findMoviesByTitleContainingAndRatingIsGreaterThanEqual(
             title ?: "",
-            minimalRating ?: 0f
+            minimalRating ?: MIN_RATING
         )
     }
 
@@ -38,9 +46,11 @@ class MovieService(
         rating: Float? = null,
         directorId: Long
     ) : MovieEntity {
+        validateReleaseYear(year)
+
         val director = directorService.getDirectorById(directorId)
 
-        val movieRating = rating ?: (Random.nextFloat() * 10)
+        val movieRating = rating ?: (Random.nextFloat() * RATING_GENERATION_FACTOR)
 
         val movieEntity = MovieEntity(
             title = title,
@@ -62,8 +72,10 @@ class MovieService(
         movieId: Long,
         newMovie: UpdateMovieModel
     ) : MovieEntity {
+        validateReleaseYear(newMovie.year)
+
         val currentMovieEntity = movieRepository.findMovieById(movieId)
-            ?: throw EntityNotFoundException("Movie with id = $movieId not found")
+            ?: throw EntityNotFoundException(MOVIE_NOT_FOUND_BY_ID_MESSAGE.format(movieId))
 
         val newMovieEntity = currentMovieEntity.copy(
             title = newMovie.title,
@@ -72,5 +84,11 @@ class MovieService(
         )
 
         return movieRepository.save(newMovieEntity)
+    }
+
+    private fun validateReleaseYear(releaseYear: Int) {
+        require(releaseYear > MIN_RELEASE_YEAR) {
+            INVALID_RATING_MESSAGE.format(releaseYear)
+        }
     }
 }

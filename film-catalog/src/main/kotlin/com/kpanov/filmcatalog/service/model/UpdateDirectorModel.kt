@@ -1,4 +1,4 @@
-package com.kpanov.filmcatalog.service.dto
+package com.kpanov.filmcatalog.service.model
 
 data class UpdateDirectorModel(
     val fullName: String,

@@ -18,7 +18,6 @@ class GlobalExceptionHandler(
         val error = "Bad Request"
         val response = ErrorResponse(
             timestamp = LocalDateTime.now(clock),
-            status = HttpStatus.BAD_REQUEST.value(),
             error = error,
             message = e.message ?: error
         )
@@ -31,7 +30,6 @@ class GlobalExceptionHandler(
         val error = "Not Found"
         val response = ErrorResponse(
             timestamp = LocalDateTime.now(clock),
-            status = HttpStatus.NOT_FOUND.value(),
             error = error,
             message = e.message ?: error
         )

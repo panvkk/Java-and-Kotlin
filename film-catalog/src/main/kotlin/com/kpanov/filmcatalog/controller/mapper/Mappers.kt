@@ -6,8 +6,8 @@ import com.kpanov.filmcatalog.controller.dto.UpdateDirectorRequestDto
 import com.kpanov.filmcatalog.controller.dto.UpdateMovieRequestDto
 import com.kpanov.filmcatalog.repository.entity.DirectorEntity
 import com.kpanov.filmcatalog.repository.entity.MovieEntity
-import com.kpanov.filmcatalog.service.dto.UpdateDirectorModel
-import com.kpanov.filmcatalog.service.dto.UpdateMovieModel
+import com.kpanov.filmcatalog.service.model.UpdateDirectorModel
+import com.kpanov.filmcatalog.service.model.UpdateMovieModel
 
 fun DirectorEntity.toDto() = DirectorResponseDto(id = id, fullName = fullName, birthYear = birthYear)
 
