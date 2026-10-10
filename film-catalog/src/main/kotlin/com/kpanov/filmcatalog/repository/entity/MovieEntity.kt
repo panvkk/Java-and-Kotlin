@@ -1,0 +1,17 @@
+package com.kpanov.filmcatalog.repository.entity
+
+import jakarta.persistence.*
+
+@Entity
+@Table(name = "movies_table")
+data class MovieEntity (
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
+    val title: String,
+    @Column("release_year")
+    val releaseYear: Int,
+    val rating: Float,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "director_id", nullable = false) // пока не совсем понимаю когда надо ставить nullable, а когда нет
+    val director: DirectorEntity
+)
