@@ -1,9 +1,8 @@
 package com.kpanov.auth.controller;
 
 
-import com.kpanov.auth.controller.dto.AuthenticationRequest;
-import com.kpanov.auth.controller.dto.AuthenticationResponse;
-import com.kpanov.auth.controller.dto.RegisterRequest;
+import com.kpanov.auth.controller.dto.AuthenticationResponseDto;
+import com.kpanov.auth.controller.dto.RegisterRequestDto;
 import com.kpanov.auth.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +19,8 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(
-            @RequestBody RegisterRequest request
+    public ResponseEntity<AuthenticationResponseDto> register(
+            @RequestBody RegisterRequestDto request
     ) {
         return ResponseEntity.ok(authenticationService)
     }

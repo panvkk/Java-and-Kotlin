@@ -1,5 +1,5 @@
 package com.kpanov.auth.controller.dto;
 
-public record AuthenticationResponse(
+public record AuthenticationResponseDto(
 
 ) { }

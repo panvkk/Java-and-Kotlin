@@ -22,6 +22,7 @@ logs/
 ### Local Configs & Secrets (чтобы не утекли креды) ###
 .env
 *.local
+auth-service/src/main/resources/application-local.yml
 application-local.yml
 application-local.properties
 secrets.*
