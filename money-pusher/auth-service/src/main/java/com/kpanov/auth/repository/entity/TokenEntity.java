@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(name = "tokens_table")
 public class TokenEntity {
     @Id
     @GeneratedValue
@@ -26,5 +27,6 @@ public class TokenEntity {
 
     private boolean expired;
 
-    // Надо добавить связь с User
+    @ManyToOne()
+    private UserEntity user;
 }
