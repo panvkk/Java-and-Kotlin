@@ -21,6 +21,7 @@ public class TokenEntity {
     private String token;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "token_type")
     private TokenType tokenType;
 
     private boolean revoked;
