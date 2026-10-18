@@ -10,7 +10,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    public final UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public void createUser(UserEntity user) {
         userRepository.save(user);
