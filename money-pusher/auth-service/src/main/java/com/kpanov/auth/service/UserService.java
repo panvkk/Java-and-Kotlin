@@ -5,13 +5,18 @@ import com.kpanov.auth.repository.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
     public final UserRepository userRepository;
 
-    public void saveUser(UserEntity user) {
+    public void createUser(UserEntity user) {
         userRepository.save(user);
+    }
+
+    public Optional<UserEntity> getUserByEmail(String email) {
+        return userRepository.findUserByEmail(email);
     }
 }

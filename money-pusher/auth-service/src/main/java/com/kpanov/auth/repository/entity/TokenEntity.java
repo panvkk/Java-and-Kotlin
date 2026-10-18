@@ -24,10 +24,6 @@ public class TokenEntity {
     @Column(name = "token_type")
     private TokenType tokenType;
 
-    private boolean revoked;
-
-    private boolean expired;
-
     @ManyToOne()
     private UserEntity user;
 }

@@ -19,15 +19,12 @@ import java.util.function.Function;
 @Service
 @RequiredArgsConstructor
 public class JwtService {
-
     private final Clock clock;
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
-
     @Value("${application.security.jwt.expiration}")
     private long expiration;
-
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
@@ -64,6 +61,27 @@ public class JwtService {
                 .setExpiration(tokenExpiration)
                 .signWith(getSigningKey(), SignatureAlgorithm.ES256)
                 .compact();
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        var username = extractUsername(token);
+        return username.equals(userDetails.getUsername())
+                && !isTokenExpired(token);
+    }
+
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    public boolean isTokenExpired(String token) {
+        var expiration = extractExpiration(token);
+        Date now = Date.from(Instant.now(clock));
+
+        return expiration.before(now);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
