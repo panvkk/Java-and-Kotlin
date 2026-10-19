@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import static com.kpanov.auth.util.Constants.HEADER_BEGINNING;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -31,6 +33,4 @@ public class LogoutController {
 
         return ResponseEntity.ok().build();
     }
-
-    static private final String HEADER_BEGINNING = "Bearer ";
 }

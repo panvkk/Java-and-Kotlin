@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static com.kpanov.auth.util.Constants.HEADER_BEGINNING;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -47,6 +49,4 @@ public class AuthenticationController {
 
         return ResponseEntity.ok(response);
     }
-
-    static private final String HEADER_BEGINNING = "Bearer ";
 }
