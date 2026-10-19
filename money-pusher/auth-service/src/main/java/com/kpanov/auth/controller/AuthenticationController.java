@@ -32,7 +32,7 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponseDto> authenticate(
             @RequestBody AuthenticationRequestDto request
     ) {
-        var responseModel = authenticationService.authenticate(mappers.toModel(request));
+        var responseModel = authenticationService.login(mappers.toModel(request));
         return ResponseEntity.ok(mappers.toDto(responseModel));
     }
 

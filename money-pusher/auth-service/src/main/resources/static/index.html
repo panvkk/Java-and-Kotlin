@@ -3,279 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auth Testing UI</title>
-    <style>
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 28px; width: 100%; max-width: 440px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
-        h2 { margin-top: 0; color: #f1f5f9; font-size: 1.5rem; text-align: center; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; background: #0f172a; padding: 4px; border-radius: 8px; }
-        .tab-btn { flex: 1; padding: 8px; border: none; background: transparent; color: #94a3b8; font-weight: 600; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
-        .tab-btn.active { background: #3b82f6; color: #ffffff; }
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; }
-        input, select { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 0.95rem; outline: none; }
-        input:focus, select:focus { border-color: #3b82f6; }
-        button.submit-btn { width: 100%; padding: 12px; border: none; border-radius: 6px; background: #3b82f6; color: white; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
-        button.submit-btn:hover { background: #2563eb; }
-        button.logout-btn { background: #ef4444; }
-        button.logout-btn:hover { background: #dc2626; }
-        button.secondary-btn { background: #475569; margin-top: 10px; }
-        button.secondary-btn:hover { background: #334155; }
-        .hidden { display: none; }
-        .token-box { background: #0f172a; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.75rem; word-break: break-all; color: #38bdf8; max-height: 80px; overflow-y: auto; margin-bottom: 12px; border: 1px solid #334155; }
-        .status-msg { margin-top: 16px; padding: 10px; border-radius: 6px; font-size: 0.85rem; text-align: center; }
-        .status-msg.error { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #fca5a5; }
-        .status-msg.success { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #86efac; }
-        .config { margin-bottom: 20px; text-align: center; }
-        .config input { font-size: 0.8rem; text-align: center; }
-    </style>
+    <title>Spring Security Auth App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex flex-col justify-between">
 
-<div class="card">
-    <div class="config">
-        <label>Base API URL</label>
-        <input type="text" id="baseUrl" value="http://localhost:8080">
+<div class="max-w-md mx-auto w-full p-6 mt-10">
+    <!-- Навигационные вкладки -->
+    <div class="flex rounded-lg bg-gray-200 p-1 mb-6" id="navTabs">
+        <button onclick="switchTab('login')" id="tab-login" class="flex-1 py-2 text-sm font-medium rounded-md transition bg-white shadow-sm text-gray-800">Вход</button>
+        <button onclick="switchTab('register')" id="tab-register" class="flex-1 py-2 text-sm font-medium rounded-md transition text-gray-600">Регистрация</button>
+        <button onclick="switchTab('profile')" id="tab-profile" class="flex-1 py-2 text-sm font-medium rounded-md transition text-gray-600 hidden">Профиль</button>
     </div>
 
-    <!-- Табы для гостей -->
-    <div id="authTabs" class="tabs">
-        <button class="tab-btn active" onclick="switchTab('login')">Вход</button>
-        <button class="tab-btn" onclick="switchTab('register')">Регистрация</button>
+    <!-- Контейнер карточек -->
+    <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+
+        <!-- Вкладка 1: Вход -->
+        <div id="view-login" class="space-y-4">
+            <h2 class="text-xl font-bold text-gray-800">Вход в систему</h2>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Email</label>
+                <input type="email" id="authEmail" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="user@example.com">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Пароль</label>
+                <input type="password" id="authPassword" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••••">
+            </div>
+            <button onclick="authenticate()" class="w-full bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition">Войти</button>
+        </div>
+
+        <!-- Вкладка 2: Регистрация -->
+        <div id="view-register" class="space-y-4 hidden">
+            <h2 class="text-xl font-bold text-gray-800">Регистрация</h2>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Имя пользователя (Username)</label>
+                <input type="text" id="regUsername" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="ivan">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Email</label>
+                <input type="email" id="regEmail" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="user@example.com">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Пароль</label>
+                <input type="password" id="regPassword" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="••••••••">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Роль</label>
+                <select id="regRole" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                    <option value="USER">USER</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </div>
+            <button onclick="register()" class="w-full bg-green-600 text-white p-2.5 rounded-lg hover:bg-green-700 font-medium text-sm transition">Зарегистрироваться</button>
+        </div>
+
+        <!-- Вкладка 3: Профиль -->
+        <div id="view-profile" class="space-y-4 hidden">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h2 class="text-xl font-bold text-gray-800">Профиль пользователя</h2>
+                <span class="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full" id="userRoleBadge">USER</span>
+            </div>
+            <div class="space-y-2">
+                <div>
+                    <span class="text-xs text-gray-400 uppercase">Субъект / Email:</span>
+                    <p id="profileEmail" class="text-sm font-medium text-gray-800 font-mono">-</p>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-400 uppercase">Срок действия токена до:</span>
+                    <p id="profileExp" class="text-sm font-medium text-gray-800 font-mono">-</p>
+                </div>
+            </div>
+            <div class="pt-2 space-y-2">
+                <button onclick="refreshToken()" class="w-full bg-purple-600 text-white p-2.5 rounded-lg hover:bg-purple-700 font-medium text-sm transition">Обновить Access Token</button>
+                <button onclick="logout()" class="w-full bg-red-600 text-white p-2.5 rounded-lg hover:bg-red-700 font-medium text-sm transition">Выйти из профиля</button>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Сообщение о статусе -->
-    <div id="statusMsg" class="status-msg hidden"></div>
-
-    <!-- Форма Входа -->
-    <form id="loginForm" onsubmit="handleLogin(event)">
-        <h2>Авторизация</h2>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="loginEmail" required placeholder="user@example.com">
+    <!-- Консоль для отладки ответов -->
+    <div class="mt-6 bg-gray-900 text-gray-200 p-4 rounded-xl shadow text-xs font-mono">
+        <div class="flex justify-between items-center mb-2 border-b border-gray-800 pb-1">
+            <span class="text-gray-400 uppercase tracking-wider">Логи / Ответ сервера:</span>
+            <button onclick="clearLogs()" class="text-gray-500 hover:text-gray-300 text-[10px]">Очистить</button>
         </div>
-        <div class="form-group">
-            <label>Пароль</label>
-            <input type="password" id="loginPassword" required placeholder="••••••••">
-        </div>
-        <button type="submit" class="submit-btn">Войти</button>
-    </form>
-
-    <!-- Форма Регистрации -->
-    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
-        <h2>Регистрация</h2>
-        <div class="form-group">
-            <label>Username</label>
-            <input type="text" id="regUsername" required placeholder="johndoe">
-        </div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="regEmail" required placeholder="user@example.com">
-        </div>
-        <div class="form-group">
-            <label>Пароль</label>
-            <input type="password" id="regPassword" required placeholder="••••••••">
-        </div>
-        <div class="form-group">
-            <label>Роль</label>
-            <select id="regRole">
-                <option value="USER">USER</option>
-                <option value="ADMIN">ADMIN</option>
-            </select>
-        </div>
-        <button type="submit" class="submit-btn">Зарегистрироваться</button>
-    </form>
-
-    <!-- Экран Профиля -->
-    <div id="profileView" class="hidden">
-        <h2>Профиль пользователя</h2>
-
-        <label>Access Token:</label>
-        <div id="displayAccessToken" class="token-box">-</div>
-
-        <label>Refresh Token:</label>
-        <div id="displayRefreshToken" class="token-box">-</div>
-
-        <button onclick="handleRefreshToken()" class="submit-btn secondary-btn">Обновить токен (Refresh)</button>
-        <button onclick="handleLogout()" class="submit-btn logout-btn" style="margin-top: 10px;">Выйти из аккаунта</button>
+        <pre id="output" class="overflow-x-auto h-28 text-green-400">Готов к работе...</pre>
     </div>
 </div>
 
 <script>
-    let accessToken = localStorage.getItem('access_token') || '';
-    let refreshToken = localStorage.getItem('refresh_token') || '';
-
-    // Инициализация при загрузке
-    window.onload = () => {
-        if (accessToken) {
-            showProfile();
+    // Инициализация при загрузке страницы: проверяем, есть ли уже сохраненный токен
+    window.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            showProfileData(token);
+            switchTab('profile');
         }
-    };
+    });
 
-    function switchTab(tab) {
-        hideStatus();
-        const isLogin = tab === 'login';
-        document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
-        document.getElementById('registerForm').classList.toggle('hidden', isLogin);
-
-        const tabs = document.querySelectorAll('.tab-btn');
-        tabs[0].classList.toggle('active', isLogin);
-        tabs[1].classList.toggle('active', !isLogin);
+    function log(data) {
+        const output = document.getElementById('output');
+        output.innerText = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
     }
 
-    function showStatus(text, isError = false) {
-        const el = document.getElementById('statusMsg');
-        el.textContent = text;
-        el.className = `status-msg ${isError ? 'error' : 'success'}`;
-        el.classList.remove('hidden');
+    function clearLogs() {
+        document.getElementById('output').innerText = 'Логи очищены...';
     }
 
-    function hideStatus() {
-        document.getElementById('statusMsg').classList.add('hidden');
+    function switchTab(tabName) {
+        ['login', 'register', 'profile'].forEach(name => {
+            document.getElementById(`view-${name}`).classList.add('hidden');
+            document.getElementById(`tab-${name}`).classList.remove('bg-white', 'shadow-sm', 'text-gray-800');
+            document.getElementById(`tab-${name}`).classList.add('text-gray-600');
+        });
+
+        document.getElementById(`view-${tabName}`).classList.remove('hidden');
+        const activeTab = document.getElementById(`tab-${tabName}`);
+        activeTab.classList.add('bg-white', 'shadow-sm', 'text-gray-800');
+        activeTab.classList.remove('text-gray-600');
     }
 
-    function saveTokens(access, refresh) {
-        accessToken = access;
-        refreshToken = refresh;
-        localStorage.setItem('access_token', access);
-        localStorage.setItem('refresh_token', refresh);
+    function handleAuthSuccess(json) {
+        if (json.access_token) {
+            localStorage.setItem('access_token', json.access_token);
+        }
+        if (json.refresh_token) {
+            localStorage.setItem('refresh_token', json.refresh_token);
+        }
+        // Показываем вкладку профиля и скрываем вход/регистрацию в навигации
+        document.getElementById('tab-profile').classList.remove('hidden');
+        showProfileData(json.access_token);
+        switchTab('profile');
     }
 
-    function clearTokens() {
-        accessToken = '';
-        refreshToken = '';
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-    }
-
-    function showProfile() {
-        document.getElementById('loginForm').classList.add('hidden');
-        document.getElementById('registerForm').classList.add('hidden');
-        document.getElementById('authTabs').classList.add('hidden');
-        document.getElementById('profileView').classList.remove('hidden');
-
-        document.getElementById('displayAccessToken').textContent = accessToken || 'Отсутствует';
-        document.getElementById('displayRefreshToken').textContent = refreshToken || 'Отсутствует';
-    }
-
-    function showAuth() {
-        document.getElementById('profileView').classList.add('hidden');
-        document.getElementById('authTabs').classList.remove('hidden');
-        switchTab('login');
-    }
-
-    function getBaseUrl() {
-        return document.getElementById('baseUrl').value.replace(/\/$/, '');
-    }
-
-    // POST /api/v1/auth/authenticate
-    async function handleLogin(e) {
-        e.preventDefault();
-        hideStatus();
-
-        const body = {
-            email: document.getElementById('loginEmail').value,
-            password: document.getElementById('loginPassword').value
-        };
-
+    function showProfileData(token) {
         try {
-            const res = await fetch(`${getBaseUrl()}/api/v1/auth/authenticate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+            // Распаковка JWT payload на клиенте (base64)
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
 
-            if (!res.ok) throw new Error(`Ошибка: ${res.status}`);
+            const payload = JSON.parse(jsonPayload);
+            document.getElementById('profileEmail').innerText = payload.sub || 'Неизвестно';
 
-            const data = await res.json();
-            saveTokens(data.access_token, data.refresh_token);
-            showStatus('Успешный вход!');
-            setTimeout(showProfile, 500);
-        } catch (err) {
-            showStatus(err.message, true);
+            if (payload.exp) {
+                const expDate = new Date(payload.exp * 1000);
+                document.getElementById('profileExp').innerText = expDate.toLocaleTimeString();
+            }
+        } catch (e) {
+            console.error("Ошибка парсинга токена", e);
         }
     }
 
-    // POST /api/v1/auth/register
-    async function handleRegister(e) {
-        e.preventDefault();
-        hideStatus();
-
+    async function register() {
         const body = {
             username: document.getElementById('regUsername').value,
             email: document.getElementById('regEmail').value,
             password: document.getElementById('regPassword').value,
             role: document.getElementById('regRole').value
         };
-
         try {
-            const res = await fetch(`${getBaseUrl()}/api/v1/auth/register`, {
+            const res = await fetch('/api/v1/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
-
-            if (!res.ok) throw new Error(`Ошибка: ${res.status}`);
-
-            const data = await res.json();
-            saveTokens(data.access_token, data.refresh_token);
-            showStatus('Успешная регистрация!');
-            setTimeout(showProfile, 500);
-        } catch (err) {
-            showStatus(err.message, true);
+            const json = await res.json();
+            log(json);
+            if (res.ok) handleAuthSuccess(json);
+        } catch (e) {
+            log('Ошибка сети: ' + e.message);
         }
     }
 
-    // POST /api/v1/auth/refresh-token
-    async function handleRefreshToken() {
-        hideStatus();
-
+    async function authenticate() {
+        const body = {
+            email: document.getElementById('authEmail').value,
+            password: document.getElementById('authPassword').value
+        };
         try {
-            const res = await fetch(`${getBaseUrl()}/api/v1/auth/refresh-token`, {
+            const res = await fetch('/api/v1/auth/authenticate', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${refreshToken}`
-                }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
             });
-
-            if (!res.ok) throw new Error(`Ошибка обновления: ${res.status}`);
-
-            const data = await res.json();
-            saveTokens(data.access_token, data.refresh_token);
-            showProfile();
-            showStatus('Токены успешно обновлены!');
-        } catch (err) {
-            showStatus(err.message, true);
+            const json = await res.json();
+            log(json);
+            if (res.ok) handleAuthSuccess(json);
+        } catch (e) {
+            log('Ошибка сети: ' + e.message);
         }
     }
 
-    // POST /api/v1/logout
-    async function handleLogout() {
-        hideStatus();
+    async function refreshToken() {
+        const refToken = localStorage.getItem('refresh_token');
+        if (!refToken) {
+            alert('Refresh token отсутствует!');
+            return;
+        }
+        try {
+            const res = await fetch('/api/v1/auth/refresh-token', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + refToken }
+            });
+            const json = await res.json();
+            log(json);
+            if (res.ok) {
+                handleAuthSuccess(json);
+                alert('Токен успешно обновлен!');
+            }
+        } catch (e) {
+            log('Ошибка сети: ' + e.message);
+        }
+    }
+
+    async function logout() {
+        const accToken = localStorage.getItem('access_token');
+        const refToken = localStorage.getItem('refresh_token');
 
         try {
-            const res = await fetch(`${getBaseUrl()}/api/v1/logout`, {
+            const res = await fetch('/api/v1/logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
+                    'Authorization': 'Bearer ' + accToken
                 },
-                body: JSON.stringify({
-                    requestToken: refreshToken
-                })
+                body: JSON.stringify({ requestToken: refToken })
             });
 
-            if (!res.ok) console.warn('Сервер вернул ошибку при логауте:', res.status);
-
-            clearTokens();
-            showAuth();
-            showStatus('Вы успешно вышли');
-        } catch (err) {
-            // Даже если бэк упал, сбрасываем локальные токены
-            clearTokens();
-            showAuth();
-            showStatus('Вышли (локально)', true);
+            log('Логаут выполнен со статусом: ' + res.status);
+        } catch (e) {
+            log('Ошибка при логауте (но сессия на клиенте будет очищена): ' + e.message);
+        } finally {
+            // Очищаем локальное хранилище и возвращаем интерфейс на вкладку входа
+            localStorage.clear();
+            document.getElementById('tab-profile').classList.add('hidden');
+            switchTab('login');
         }
     }
 </script>

@@ -11,11 +11,18 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final AuthenticationProvider authProvider;
+    private final JwtAuthenticationFilter jwtFilter;
+
     private static final String[] WHITE_LIST_URL = {
+            "/",
+            "/index.html",
             "/api/v1/auth/**",
 
             "/v2/api-docs",
@@ -26,9 +33,6 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/swagger-ui.html"
     };
-
-    private final AuthenticationProvider authProvider;
-    private final JwtAuthenticationFilter jwtFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

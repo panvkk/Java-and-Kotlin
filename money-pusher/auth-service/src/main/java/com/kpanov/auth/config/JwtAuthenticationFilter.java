@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.kpanov.auth.util.Constants.HEADER_BEGINNING;
 import static com.kpanov.auth.util.Messages.INVALID_ACCESS_TOKEN;
@@ -27,16 +28,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public final JwtService jwtService;
     public final UserDetailsService userDetailsService;
 
+    private final List<String> EXCLUDED_URLS = List.of(
+            "/",
+            "/index.html",
+            "/api/v1/auth/**",
+
+            "/v2/api-docs",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
+    );
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        var path = request.getRequestURI();
+        return EXCLUDED_URLS.stream().anyMatch(path::startsWith);
+    }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        if(request.getServletPath().contains("/api/v1/auth")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+
         final var authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String token;
         final String userEmail;
