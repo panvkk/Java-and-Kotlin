@@ -3,6 +3,8 @@ package com.kpanov.auth.controller.mapper;
 import com.kpanov.auth.controller.dto.AuthenticationRequestDto;
 import com.kpanov.auth.controller.dto.AuthenticationResponseDto;
 import com.kpanov.auth.controller.dto.RegisterRequestDto;
+import com.kpanov.auth.controller.dto.UserProfileResponseDto;
+import com.kpanov.auth.repository.entity.UserEntity;
 import com.kpanov.auth.service.model.AuthenticationRequest;
 import com.kpanov.auth.service.model.AuthenticationResponse;
 import com.kpanov.auth.service.model.RegisterRequest;
@@ -16,10 +18,14 @@ public class ControllerMappers {
     }
 
     public RegisterRequest toModel(RegisterRequestDto dto) {
-        return new RegisterRequest(dto.username(), dto.email(), dto.password(), dto.role());
+        return new RegisterRequest(dto.nickname(), dto.email(), dto.password(), dto.role());
     }
 
     public AuthenticationResponseDto toDto(AuthenticationResponse model) {
         return new AuthenticationResponseDto(model.accessToken(), model.refreshToken());
+    }
+
+    public UserProfileResponseDto toDto(UserEntity entity) {
+        return new UserProfileResponseDto(entity.getNickname(), entity.getEmail(),  entity.getRole());
     }
 }

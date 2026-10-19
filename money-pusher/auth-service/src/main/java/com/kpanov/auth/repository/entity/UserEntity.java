@@ -20,7 +20,7 @@ import java.util.List;
 public class UserEntity implements UserDetails {
     @Id @GeneratedValue
     private Integer id;
-    private String username;
+    private String nickname;
     private String email;
     private String password;
 
@@ -40,7 +40,6 @@ public class UserEntity implements UserDetails {
         return password;
     }
 
-    @Override
     public String getUsername() {
         return email;
     }

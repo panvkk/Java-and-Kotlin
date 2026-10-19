@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,8 +29,8 @@ public class AuthenticationService {
                         request.password()
                 )
         );
-        var user = userService.getUserByEmail(request.email())
-                .orElseThrow(() -> new UsernameNotFoundException(request.email()));
+        var user = userService.getUserByEmail(request.email());
+
         var accessToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
 
@@ -41,7 +40,7 @@ public class AuthenticationService {
 
     public AuthenticationResponse register(RegisterRequest request) {
         var user = UserEntity.builder()
-                .username(request.username())
+                .nickname(request.nickname())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .role(request.role())
@@ -63,12 +62,7 @@ public class AuthenticationService {
             throw new BadCredentialsException(Messages.INVALID_REFRESH_TOKEN);
         }
 
-        final var user = userService.getUserByEmail(userEmail)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                Messages.USER_NOT_FOUND_BY_EMAIL.formatted(userEmail)
-                        )
-                );
+        final var user = userService.getUserByEmail(userEmail);
 
         if(!jwtService.isTokenValid(token, user)) {
             throw new BadCredentialsException(Messages.INVALID_REFRESH_TOKEN);

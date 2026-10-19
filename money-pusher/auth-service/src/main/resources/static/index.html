@@ -37,7 +37,7 @@
         <div id="view-register" class="space-y-4 hidden">
             <h2 class="text-xl font-bold text-gray-800">Регистрация</h2>
             <div>
-                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Имя пользователя (Username)</label>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Никнейм (Nickname)</label>
                 <input type="text" id="regUsername" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="ivan">
             </div>
             <div>
@@ -61,21 +61,26 @@
         <!-- Вкладка 3: Профиль -->
         <div id="view-profile" class="space-y-4 hidden">
             <div class="flex items-center justify-between border-b pb-3">
-                <h2 class="text-xl font-bold text-gray-800">Профиль пользователя</h2>
+                <h2 class="text-xl font-bold text-gray-800">Профиль (из БД)</h2>
                 <span class="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full" id="userRoleBadge">USER</span>
             </div>
-            <div class="space-y-2">
+            <div class="space-y-3 bg-gray-50 p-3 rounded-lg border">
                 <div>
-                    <span class="text-xs text-gray-400 uppercase">Субъект / Email:</span>
-                    <p id="profileEmail" class="text-sm font-medium text-gray-800 font-mono">-</p>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Nickname:</span>
+                    <p id="profileNickname" class="text-sm font-semibold text-gray-800">-</p>
                 </div>
                 <div>
-                    <span class="text-xs text-gray-400 uppercase">Срок действия токена до:</span>
-                    <p id="profileExp" class="text-sm font-medium text-gray-800 font-mono">-</p>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Email:</span>
+                    <p id="profileEmail" class="text-sm font-semibold text-gray-800">-</p>
+                </div>
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Token Expiration (действителен до):</span>
+                    <p id="profileExp" class="text-xs font-mono font-medium text-purple-600">-</p>
                 </div>
             </div>
             <div class="pt-2 space-y-2">
-                <button onclick="refreshToken()" class="w-full bg-purple-600 text-white p-2.5 rounded-lg hover:bg-purple-700 font-medium text-sm transition">Обновить Access Token</button>
+                <button onclick="loadProfile()" class="w-full bg-gray-800 text-white p-2 rounded-lg hover:bg-gray-900 font-medium text-xs transition">Обновить данные профиля</button>
+                <button onclick="refreshToken()" class="w-full bg-purple-600 text-white p-2.5 rounded-lg hover:bg-purple-700 font-medium text-sm transition">Принудительно обновить токен</button>
                 <button onclick="logout()" class="w-full bg-red-600 text-white p-2.5 rounded-lg hover:bg-red-700 font-medium text-sm transition">Выйти из профиля</button>
             </div>
         </div>
@@ -93,12 +98,12 @@
 </div>
 
 <script>
-    // Инициализация при загрузке страницы: проверяем, есть ли уже сохраненный токен
     window.addEventListener('DOMContentLoaded', () => {
         const token = localStorage.getItem('access_token');
         if (token) {
-            showProfileData(token);
+            document.getElementById('tab-profile').classList.remove('hidden');
             switchTab('profile');
+            loadProfile();
         }
     });
 
@@ -113,54 +118,157 @@
 
     function switchTab(tabName) {
         ['login', 'register', 'profile'].forEach(name => {
-            document.getElementById(`view-${name}`).classList.add('hidden');
-            document.getElementById(`tab-${name}`).classList.remove('bg-white', 'shadow-sm', 'text-gray-800');
-            document.getElementById(`tab-${name}`).classList.add('text-gray-600');
+            const view = document.getElementById(`view-${name}`);
+            const tab = document.getElementById(`tab-${name}`);
+            if (view) view.classList.add('hidden');
+            if (tab) {
+                tab.classList.remove('bg-white', 'shadow-sm', 'text-gray-800');
+                tab.classList.add('text-gray-600');
+            }
         });
 
-        document.getElementById(`view-${tabName}`).classList.remove('hidden');
+        const activeView = document.getElementById(`view-${tabName}`);
         const activeTab = document.getElementById(`tab-${tabName}`);
-        activeTab.classList.add('bg-white', 'shadow-sm', 'text-gray-800');
-        activeTab.classList.remove('text-gray-600');
+        if (activeView) activeView.classList.remove('hidden');
+        if (activeTab) {
+            activeTab.classList.add('bg-white', 'shadow-sm', 'text-gray-800');
+            activeTab.classList.remove('text-gray-600');
+        }
     }
 
     function handleAuthSuccess(json) {
         if (json.access_token) {
             localStorage.setItem('access_token', json.access_token);
+            updateTokenExpirationDisplay(json.access_token);
         }
         if (json.refresh_token) {
             localStorage.setItem('refresh_token', json.refresh_token);
         }
-        // Показываем вкладку профиля и скрываем вход/регистрацию в навигации
         document.getElementById('tab-profile').classList.remove('hidden');
-        showProfileData(json.access_token);
         switchTab('profile');
+        loadProfile();
     }
 
-    function showProfileData(token) {
+    function parseJwt(token) {
         try {
-            // Распаковка JWT payload на клиенте (base64)
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error("Ошибка декодирования токена", e);
+            return null;
+        }
+    }
 
-            const payload = JSON.parse(jsonPayload);
-            document.getElementById('profileEmail').innerText = payload.sub || 'Неизвестно';
+    function updateTokenExpirationDisplay(token) {
+        const payload = parseJwt(token);
+        if (payload && payload.exp) {
+            const expDate = new Date(payload.exp * 1000);
+            document.getElementById('profileExp').innerText = expDate.toLocaleTimeString() + ' (' + expDate.toLocaleDateString() + ')';
+        }
+    }
 
-            if (payload.exp) {
-                const expDate = new Date(payload.exp * 1000);
-                document.getElementById('profileExp').innerText = expDate.toLocaleTimeString();
+    // ==========================================
+    // ИНТЕРЦЕПТОР (Аналог OkHttp Interceptor)
+    // ==========================================
+    async function fetchWithAuth(url, options = {}) {
+        let token = localStorage.getItem('access_token');
+
+        options.headers = options.headers || {};
+        if (token) {
+            options.headers['Authorization'] = 'Bearer ' + token;
+        }
+
+        let response = await fetch(url, options);
+
+        // Если сервер говорит, что токен протух (401 или 403)
+        if (response.status === 401 || response.status === 403) {
+            log('Access token протух. Пробуем обновить через Refresh Token...');
+            const refreshed = await requestTokenRefresh();
+
+            if (refreshed) {
+                // Повторяем запрос с новым токеном
+                token = localStorage.getItem('access_token');
+                options.headers['Authorization'] = 'Bearer ' + token;
+                response = await fetch(url, options);
+            } else {
+                // Если рефреш-токен тоже не сработал — выходим
+                alert('Сессия истекла. Пожалуйста, войдите снова.');
+                logout();
+                throw new Error('Unauthorized');
+            }
+        }
+
+        return response;
+    }
+
+    // Фоновый запрос на обновление токена
+    async function requestTokenRefresh() {
+        const refToken = localStorage.getItem('refresh_token');
+        if (!refToken) return false;
+
+        try {
+            const res = await fetch('/api/v1/auth/refresh-token', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + refToken }
+            });
+
+            if (res.ok) {
+                const json = await res.json();
+                if (json.access_token) {
+                    localStorage.setItem('access_token', json.access_token);
+                    updateTokenExpirationDisplay(json.access_token);
+                    if (json.refresh_token) {
+                        localStorage.setItem('refresh_token', json.refresh_token);
+                    }
+                    log('Токен успешно обновлен в фоновом режиме!');
+                    return true;
+                }
             }
         } catch (e) {
-            console.error("Ошибка парсинга токена", e);
+            console.error('Ошибка при автообновлении токена:', e);
+        }
+        return false;
+    }
+
+    // Запрос профиля теперь идет через умный fetchWithAuth
+    async function loadProfile() {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        updateTokenExpirationDisplay(token);
+
+        const payload = parseJwt(token);
+        if (!payload || !payload.sub) {
+            log('Не удалось извлечь email (sub) из токена');
+            return;
+        }
+        const email = payload.sub;
+
+        try {
+            const res = await fetchWithAuth(`/api/v1/users/${encodeURIComponent(email)}`, {
+                method: 'GET'
+            });
+
+            if (!res.ok) return;
+
+            const json = await res.json();
+            log(json);
+
+            document.getElementById('profileNickname').innerText = json.nickname || '-';
+            document.getElementById('profileEmail').innerText = json.email || '-';
+            document.getElementById('userRoleBadge').innerText = json.role || 'USER';
+        } catch (e) {
+            log('Ошибка при загрузке профиля: ' + e.message);
         }
     }
 
     async function register() {
         const body = {
-            username: document.getElementById('regUsername').value,
+            nickname: document.getElementById('regUsername').value,
             email: document.getElementById('regEmail').value,
             password: document.getElementById('regPassword').value,
             role: document.getElementById('regRole').value
@@ -198,25 +306,14 @@
         }
     }
 
+    // Кнопка для ручного принудительного обновления токена
     async function refreshToken() {
-        const refToken = localStorage.getItem('refresh_token');
-        if (!refToken) {
-            alert('Refresh token отсутствует!');
-            return;
-        }
-        try {
-            const res = await fetch('/api/v1/auth/refresh-token', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + refToken }
-            });
-            const json = await res.json();
-            log(json);
-            if (res.ok) {
-                handleAuthSuccess(json);
-                alert('Токен успешно обновлен!');
-            }
-        } catch (e) {
-            log('Ошибка сети: ' + e.message);
+        const success = await requestTokenRefresh();
+        if (success) {
+            alert('Токен успешно обновлен вручную!');
+        } else {
+            alert('Не удалось обновить токен. Возможно, истек Refresh Token.');
+            logout();
         }
     }
 
@@ -225,7 +322,7 @@
         const refToken = localStorage.getItem('refresh_token');
 
         try {
-            const res = await fetch('/api/v1/logout', {
+            await fetch('/api/v1/logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -233,15 +330,13 @@
                 },
                 body: JSON.stringify({ requestToken: refToken })
             });
-
-            log('Логаут выполнен со статусом: ' + res.status);
         } catch (e) {
-            log('Ошибка при логауте (но сессия на клиенте будет очищена): ' + e.message);
+            console.error('Ошибка при логауте на сервере', e);
         } finally {
-            // Очищаем локальное хранилище и возвращаем интерфейс на вкладку входа
             localStorage.clear();
             document.getElementById('tab-profile').classList.add('hidden');
             switchTab('login');
+            log('Выход выполнен, сессия очищена.');
         }
     }
 </script>
