@@ -1,21 +1,23 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.config.ApplicationConfig;
+import com.kpanov.auth.config.property.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
 public class TokenService {
     private final StringRedisTemplate redisTemplate;
-
-    private final ApplicationConfig applicationConfig;
-    private final long refreshTokenExpiration = applicationConfig.getRefreshTokenExpiration();
+    private final JwtProperties jwtProperties;
 
     public void saveToken(String token, Integer userId) {
+        var refreshTokenExpiration = jwtProperties.refreshTokenExpiration();
+        var duration = Duration.ofMillis(refreshTokenExpiration);
         var key = KEY_BEGINNING + token;
-        redisTemplate.opsForValue().set(key, userId.toString(), refreshTokenExpiration);
+        redisTemplate.opsForValue().set(key, userId.toString(), duration);
     }
 
     public void rotateTokens(

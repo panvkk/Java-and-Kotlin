@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 public class BlacklistService {
@@ -15,9 +13,9 @@ public class BlacklistService {
         redisTemplate.opsForValue().set(token, BLACKLISTED, duration);
     }
 
-    public boolean isTokenBlacklisted(String token) {
-        return redisTemplate.hasKey(token);
+    public boolean isTokenNotBlacklisted(String token) {
+        return !redisTemplate.hasKey(token);
     }
 
-    static final String BLACKLISTED = "blacklisted";
+    private static final String BLACKLISTED = "blacklisted";
 }

@@ -1,18 +1,16 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.config.ApplicationConfig;
 import com.kpanov.auth.repository.entity.UserEntity;
 import com.kpanov.auth.service.model.AuthenticationRequest;
 import com.kpanov.auth.service.model.AuthenticationResponse;
 import com.kpanov.auth.service.model.RegisterRequest;
+import com.kpanov.auth.util.Messages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import com.kpanov.auth.util.Messages;
 
 @Service
 @RequiredArgsConstructor

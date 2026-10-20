@@ -1,32 +1,28 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.config.ApplicationConfig;
+import com.kpanov.auth.config.property.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Map;
 import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
 public class JwtService {
     private final Clock clock;
-
-    private final ApplicationConfig applicationConfig;
-    private final long refreshTokenExpiration = applicationConfig.getRefreshTokenExpiration();
-    private final long accessTokenExpiration = applicationConfig.getExpiration();
-    private final String secretKey = applicationConfig.getSecretKey();
-
+    private final JwtProperties jwtProperties;
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(Collections.emptyMap(), userDetails);
@@ -36,13 +32,15 @@ public class JwtService {
             Map<String, Object> claims,
             UserDetails userDetails
     ) {
-        return buildToken(claims, userDetails, accessTokenExpiration);
+        var expiration = jwtProperties.accessTokenExpiration();
+        return buildToken(claims, userDetails, expiration);
     }
 
     public String generateRefreshToken(
             UserDetails userDetails
     ) {
-        return buildToken(Collections.emptyMap(), userDetails, refreshTokenExpiration);
+        var expiration = jwtProperties.refreshTokenExpiration();
+        return buildToken(Collections.emptyMap(), userDetails, expiration);
     }
 
     private String buildToken(
@@ -99,6 +97,7 @@ public class JwtService {
     }
 
     private Key getSigningKey() {
+        var secretKey = jwtProperties.secretKey();
         byte[] bytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(bytes);
     }

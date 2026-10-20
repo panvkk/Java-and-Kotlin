@@ -1,5 +1,6 @@
 package com.kpanov.auth.config;
 
+import com.kpanov.auth.service.BlacklistService;
 import com.kpanov.auth.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,6 +27,7 @@ import static com.kpanov.auth.util.Constants.HEADER_BEGINNING;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public final JwtService jwtService;
+    public final BlacklistService blacklistService;
     public final UserDetailsService userDetailsService;
     private final PathMatcher pathMatcher = new AntPathMatcher();
 
@@ -67,7 +69,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         userEmail = jwtService.extractUsername(token);
         if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-            if(jwtService.isTokenValid(token, userDetails)) {
+
+            if(jwtService.isTokenValid(token, userDetails) &&
+                    blacklistService.isTokenNotBlacklisted(token)
+            ) {
                 var authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
