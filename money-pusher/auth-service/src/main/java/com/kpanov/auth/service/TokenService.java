@@ -1,40 +1,42 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.repository.TokenRepository;
-import com.kpanov.auth.repository.entity.TokenEntity;
-import com.kpanov.auth.repository.entity.TokenType;
-import com.kpanov.auth.repository.entity.UserEntity;
-import com.kpanov.auth.util.Messages;
-import jakarta.persistence.EntityNotFoundException;
+import com.kpanov.auth.config.ApplicationConfig;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class TokenService {
-    private final TokenRepository tokenRepository;
+    private final StringRedisTemplate redisTemplate;
 
-    public void rotateTokens(UserEntity user, String oldToken, String newToken) {
-        var oldTokenEntity = tokenRepository.findByToken(oldToken)
-                .orElseThrow(() -> new EntityNotFoundException(Messages.TOKEN_NOT_FOUND));
-        tokenRepository.delete(oldTokenEntity);
+    private final ApplicationConfig applicationConfig;
+    private final long refreshTokenExpiration = applicationConfig.getRefreshTokenExpiration();
 
-        var newTokenEntity = TokenEntity.builder()
-                .user(user)
-                .token(newToken)
-                .tokenType(TokenType.BEARER)
-                .build();
-
-        tokenRepository.save(newTokenEntity);
+    public void saveToken(String token, Integer userId) {
+        var key = KEY_BEGINNING + token;
+        redisTemplate.opsForValue().set(key, userId.toString(), refreshTokenExpiration);
     }
 
-    public void saveToken(UserEntity user, String token) {
-        var tokenEntity = TokenEntity.builder()
-                .user(user)
-                .token(token)
-                .tokenType(TokenType.BEARER)
-                .build();
-        tokenRepository.save(tokenEntity);
+    public void rotateTokens(
+            String oldToken,
+            String newToken,
+            Integer userId
+    ) {
+        deleteToken(oldToken);
+
+        saveToken(newToken, userId);
     }
+
+    public void deleteToken(String token) {
+        var key = KEY_BEGINNING + token;
+        redisTemplate.delete(key);
+    }
+
+    public boolean isTokenExists(String token) {
+        var key = KEY_BEGINNING + token;
+        return redisTemplate.hasKey(key);
+    }
+
+    private static final String KEY_BEGINNING = "refresh_token: ";
 }

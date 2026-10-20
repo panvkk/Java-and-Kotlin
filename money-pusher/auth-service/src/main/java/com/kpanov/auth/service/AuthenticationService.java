@@ -1,5 +1,6 @@
 package com.kpanov.auth.service;
 
+import com.kpanov.auth.config.ApplicationConfig;
 import com.kpanov.auth.repository.entity.UserEntity;
 import com.kpanov.auth.service.model.AuthenticationRequest;
 import com.kpanov.auth.service.model.AuthenticationResponse;
@@ -34,7 +35,7 @@ public class AuthenticationService {
         var accessToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
 
-        tokenService.saveToken(user, refreshToken);
+        tokenService.saveToken(refreshToken, user.getId());
         return new AuthenticationResponse(accessToken, refreshToken);
     }
 
@@ -50,7 +51,7 @@ public class AuthenticationService {
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
-        tokenService.saveToken(user, refreshToken);
+        tokenService.saveToken(refreshToken, user.getId());
         return new AuthenticationResponse(accessToken, refreshToken);
     }
 
@@ -64,13 +65,13 @@ public class AuthenticationService {
 
         final var user = userService.getUserByEmail(userEmail);
 
-        if(!jwtService.isTokenValid(token, user)) {
+        if(!tokenService.isTokenExists(token) || !jwtService.isTokenValid(token, user)) {
             throw new BadCredentialsException(Messages.INVALID_REFRESH_TOKEN);
         }
 
         var accessToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
-        tokenService.rotateTokens(user, token, refreshToken);
+        tokenService.rotateTokens(token, refreshToken, user.getId());
 
         return new AuthenticationResponse(accessToken, refreshToken);
     }

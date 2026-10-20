@@ -1,5 +1,6 @@
 package com.kpanov.auth.service;
 
+import com.kpanov.auth.config.ApplicationConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -21,12 +22,11 @@ import java.util.function.Function;
 public class JwtService {
     private final Clock clock;
 
-    @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
-    @Value("${application.security.jwt.expiration}")
-    private long expiration;
-    @Value("${application.security.jwt.refresh-token.expiration}")
-    private long refreshTokenExpiration;
+    private final ApplicationConfig applicationConfig;
+    private final long refreshTokenExpiration = applicationConfig.getRefreshTokenExpiration();
+    private final long accessTokenExpiration = applicationConfig.getExpiration();
+    private final String secretKey = applicationConfig.getSecretKey();
+
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(Collections.emptyMap(), userDetails);
@@ -36,7 +36,7 @@ public class JwtService {
             Map<String, Object> claims,
             UserDetails userDetails
     ) {
-        return buildToken(claims, userDetails, expiration);
+        return buildToken(claims, userDetails, accessTokenExpiration);
     }
 
     public String generateRefreshToken(
