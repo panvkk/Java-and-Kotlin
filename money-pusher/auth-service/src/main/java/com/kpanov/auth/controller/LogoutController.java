@@ -24,7 +24,7 @@ public class LogoutController {
     ) {
         final String accessToken;
         if(authHeader == null || !authHeader.startsWith(HEADER_BEGINNING)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         accessToken = authHeader.substring(HEADER_BEGINNING.length());
 

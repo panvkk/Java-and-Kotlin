@@ -1,4 +1,4 @@
-package com.kpanov.auth.config;
+package com.kpanov.auth.security;
 
 import com.kpanov.auth.service.BlacklistService;
 import com.kpanov.auth.service.JwtService;

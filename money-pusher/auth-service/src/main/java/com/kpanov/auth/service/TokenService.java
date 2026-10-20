@@ -17,6 +17,7 @@ public class TokenService {
         var refreshTokenExpiration = jwtProperties.refreshTokenExpiration();
         var duration = Duration.ofMillis(refreshTokenExpiration);
         var key = KEY_BEGINNING + token;
+
         redisTemplate.opsForValue().set(key, userId.toString(), duration);
     }
 
