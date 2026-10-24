@@ -50,8 +50,7 @@ class DirectorService(
     fun updateDirector(directorId: Long, newDirector: UpdateDirectorModel) : DirectorEntity {
         validateBirthYear(newDirector.birthYear)
 
-        val currentDirectorEntity = directorRepository.findDirectorById(directorId)
-            ?: throw EntityNotFoundException(DIRECTOR_NOT_FOUND_BY_ID_MESSAGE.format(directorId))
+        val currentDirectorEntity = getDirectorById(directorId)
 
         val newDirectorEntity = currentDirectorEntity.copy(
             fullName = newDirector.fullName,
