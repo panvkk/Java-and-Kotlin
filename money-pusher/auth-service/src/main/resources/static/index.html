@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Security Auth App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col justify-between">
+
+<div class="max-w-md mx-auto w-full p-6 mt-10">
+    <!-- Навигационные вкладки -->
+    <div class="flex rounded-lg bg-gray-200 p-1 mb-6" id="navTabs">
+        <button onclick="switchTab('login')" id="tab-login" class="flex-1 py-2 text-sm font-medium rounded-md transition bg-white shadow-sm text-gray-800">Вход</button>
+        <button onclick="switchTab('register')" id="tab-register" class="flex-1 py-2 text-sm font-medium rounded-md transition text-gray-600">Регистрация</button>
+        <button onclick="switchTab('profile')" id="tab-profile" class="flex-1 py-2 text-sm font-medium rounded-md transition text-gray-600 hidden">Профиль</button>
+    </div>
+
+    <!-- Контейнер карточек -->
+    <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+
+        <!-- Вкладка 1: Вход -->
+        <div id="view-login" class="space-y-4">
+            <h2 class="text-xl font-bold text-gray-800">Вход в систему</h2>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Email</label>
+                <input type="email" id="authEmail" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="user@example.com">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Пароль</label>
+                <input type="password" id="authPassword" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••••">
+            </div>
+            <button onclick="authenticate()" class="w-full bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition">Войти</button>
+        </div>
+
+        <!-- Вкладка 2: Регистрация -->
+        <div id="view-register" class="space-y-4 hidden">
+            <h2 class="text-xl font-bold text-gray-800">Регистрация</h2>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Никнейм (Nickname)</label>
+                <input type="text" id="regUsername" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="ivan">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Email</label>
+                <input type="email" id="regEmail" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="user@example.com">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Пароль</label>
+                <input type="password" id="regPassword" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="••••••••">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Роль</label>
+                <select id="regRole" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                    <option value="USER">USER</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </div>
+            <button onclick="register()" class="w-full bg-green-600 text-white p-2.5 rounded-lg hover:bg-green-700 font-medium text-sm transition">Зарегистрироваться</button>
+        </div>
+
+        <!-- Вкладка 3: Профиль -->
+        <div id="view-profile" class="space-y-4 hidden">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h2 class="text-xl font-bold text-gray-800">Профиль (из БД)</h2>
+                <span class="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full" id="userRoleBadge">USER</span>
+            </div>
+            <div class="space-y-3 bg-gray-50 p-3 rounded-lg border">
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Nickname:</span>
+                    <p id="profileNickname" class="text-sm font-semibold text-gray-800">-</p>
+                </div>
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Email:</span>
+                    <p id="profileEmail" class="text-sm font-semibold text-gray-800">-</p>
+                </div>
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Token Expiration (действителен до):</span>
+                    <p id="profileExp" class="text-xs font-mono font-medium text-purple-600">-</p>
+                </div>
+            </div>
+            <div class="pt-2 space-y-2">
+                <button onclick="loadProfile()" class="w-full bg-gray-800 text-white p-2 rounded-lg hover:bg-gray-900 font-medium text-xs transition">Обновить данные профиля</button>
+                <button onclick="refreshToken()" class="w-full bg-purple-600 text-white p-2.5 rounded-lg hover:bg-purple-700 font-medium text-sm transition">Принудительно обновить токен</button>
+                <button onclick="logout()" class="w-full bg-red-600 text-white p-2.5 rounded-lg hover:bg-red-700 font-medium text-sm transition">Выйти из профиля</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Консоль для отладки ответов -->
+    <div class="mt-6 bg-gray-900 text-gray-200 p-4 rounded-xl shadow text-xs font-mono">
+        <div class="flex justify-between items-center mb-2 border-b border-gray-800 pb-1">
+            <span class="text-gray-400 uppercase tracking-wider">Логи / Ответ сервера:</span>
+            <button onclick="clearLogs()" class="text-gray-500 hover:text-gray-300 text-[10px]">Очистить</button>
+        </div>
+        <pre id="output" class="overflow-x-auto h-28 text-green-400">Готов к работе...</pre>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            document.getElementById('tab-profile').classList.remove('hidden');
+            switchTab('profile');
+            loadProfile();
+        }
+    });
+
+    function log(data) {
+        const output = document.getElementById('output');
+        output.innerText = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+    }
+
+    function clearLogs() {
+        document.getElementById('output').innerText = 'Логи очищены...';
+    }
+
+    function switchTab(tabName) {
+        ['login', 'register', 'profile'].forEach(name => {
+            const view = document.getElementById(`view-${name}`);
+            const tab = document.getElementById(`tab-${name}`);
+            if (view) view.classList.add('hidden');
+            if (tab) {
+                tab.classList.remove('bg-white', 'shadow-sm', 'text-gray-800');
+                tab.classList.add('text-gray-600');
+            }
+        });
+
+        const activeView = document.getElementById(`view-${tabName}`);
+        const activeTab = document.getElementById(`tab-${tabName}`);
+        if (activeView) activeView.classList.remove('hidden');
+        if (activeTab) {
+            activeTab.classList.add('bg-white', 'shadow-sm', 'text-gray-800');
+            activeTab.classList.remove('text-gray-600');
+        }
+    }
+
+    function handleAuthSuccess(json) {
+        if (json.access_token) {
+            localStorage.setItem('access_token', json.access_token);
+            updateTokenExpirationDisplay(json.access_token);
+        }
+        if (json.refresh_token) {
+            localStorage.setItem('refresh_token', json.refresh_token);
+        }
+        document.getElementById('tab-profile').classList.remove('hidden');
+        switchTab('profile');
+        loadProfile();
+    }
+
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error("Ошибка декодирования токена", e);
+            return null;
+        }
+    }
+
+    function updateTokenExpirationDisplay(token) {
+        const payload = parseJwt(token);
+        if (payload && payload.exp) {
+            const expDate = new Date(payload.exp * 1000);
+            document.getElementById('profileExp').innerText = expDate.toLocaleTimeString() + ' (' + expDate.toLocaleDateString() + ')';
+        }
+    }
+
+    // ==========================================
+    // ИНТЕРЦЕПТОР (Аналог OkHttp Interceptor)
+    // ==========================================
+    async function fetchWithAuth(url, options = {}) {
+        let token = localStorage.getItem('access_token');
+
+        options.headers = options.headers || {};
+        if (token) {
+            options.headers['Authorization'] = 'Bearer ' + token;
+        }
+
+        let response = await fetch(url, options);
+
+        // Если сервер говорит, что токен протух (401 или 403)
+        if (response.status === 401 || response.status === 403) {
+            log('Access token протух. Пробуем обновить через Refresh Token...');
+            const refreshed = await requestTokenRefresh();
+
+            if (refreshed) {
+                // Повторяем запрос с новым токеном
+                token = localStorage.getItem('access_token');
+                options.headers['Authorization'] = 'Bearer ' + token;
+                response = await fetch(url, options);
+            } else {
+                // Если рефреш-токен тоже не сработал — выходим
+                alert('Сессия истекла. Пожалуйста, войдите снова.');
+                logout();
+                throw new Error('Unauthorized');
+            }
+        }
+
+        return response;
+    }
+
+    // Фоновый запрос на обновление токена
+    async function requestTokenRefresh() {
+        const refToken = localStorage.getItem('refresh_token');
+        if (!refToken) return false;
+
+        try {
+            const res = await fetch('/api/v1/auth/refresh-token', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + refToken }
+            });
+
+            if (res.ok) {
+                const json = await res.json();
+                if (json.access_token) {
+                    localStorage.setItem('access_token', json.access_token);
+                    updateTokenExpirationDisplay(json.access_token);
+                    if (json.refresh_token) {
+                        localStorage.setItem('refresh_token', json.refresh_token);
+                    }
+                    log('Токен успешно обновлен в фоновом режиме!');
+                    return true;
+                }
+            }
+        } catch (e) {
+            console.error('Ошибка при автообновлении токена:', e);
+        }
+        return false;
+    }
+
+    // Запрос профиля теперь идет через умный fetchWithAuth
+    async function loadProfile() {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        updateTokenExpirationDisplay(token);
+
+        const payload = parseJwt(token);
+        if (!payload || !payload.sub) {
+            log('Не удалось извлечь email (sub) из токена');
+            return;
+        }
+        const email = payload.sub;
+
+        try {
+            const res = await fetchWithAuth(`/api/v1/users/${encodeURIComponent(email)}`, {
+                method: 'GET'
+            });
+
+            if (!res.ok) return;
+
+            const json = await res.json();
+            log(json);
+
+            document.getElementById('profileNickname').innerText = json.nickname || '-';
+            document.getElementById('profileEmail').innerText = json.email || '-';
+            document.getElementById('userRoleBadge').innerText = json.role || 'USER';
+        } catch (e) {
+            log('Ошибка при загрузке профиля: ' + e.message);
+        }
+    }
+
+    async function register() {
+        const body = {
+            nickname: document.getElementById('regUsername').value,
+            email: document.getElementById('regEmail').value,
+            password: document.getElementById('regPassword').value,
+            role: document.getElementById('regRole').value
+        };
+        try {
+            const res = await fetch('/api/v1/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const json = await res.json();
+            log(json);
+            if (res.ok) handleAuthSuccess(json);
+        } catch (e) {
+            log('Ошибка сети: ' + e.message);
+        }
+    }
+
+    async function authenticate() {
+        const body = {
+            email: document.getElementById('authEmail').value,
+            password: document.getElementById('authPassword').value
+        };
+        try {
+            const res = await fetch('/api/v1/auth/authenticate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const json = await res.json();
+            log(json);
+            if (res.ok) handleAuthSuccess(json);
+        } catch (e) {
+            log('Ошибка сети: ' + e.message);
+        }
+    }
+
+    // Кнопка для ручного принудительного обновления токена
+    async function refreshToken() {
+        const success = await requestTokenRefresh();
+        if (success) {
+            alert('Токен успешно обновлен вручную!');
+        } else {
+            alert('Не удалось обновить токен. Возможно, истек Refresh Token.');
+            logout();
+        }
+    }
+
+    async function logout() {
+        const accToken = localStorage.getItem('access_token');
+        const refToken = localStorage.getItem('refresh_token');
+
+        try {
+            await fetch('/api/v1/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + accToken
+                },
+                body: JSON.stringify({ requestToken: refToken })
+            });
+        } catch (e) {
+            console.error('Ошибка при логауте на сервере', e);
+        } finally {
+            localStorage.clear();
+            document.getElementById('tab-profile').classList.add('hidden');
+            switchTab('login');
+            log('Выход выполнен, сессия очищена.');
+        }
+    }
+</script>
+</body>
+</html>
