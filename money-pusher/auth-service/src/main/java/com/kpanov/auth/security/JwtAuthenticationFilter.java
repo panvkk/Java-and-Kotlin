@@ -2,6 +2,7 @@ package com.kpanov.auth.security;
 
 import com.kpanov.auth.service.BlacklistService;
 import com.kpanov.auth.service.JwtService;
+import com.kpanov.auth.service.model.TokenType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,9 +27,9 @@ import static com.kpanov.auth.util.Constants.HEADER_BEGINNING;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    public final JwtService jwtService;
-    public final BlacklistService blacklistService;
-    public final UserDetailsService userDetailsService;
+    private final JwtService jwtService;
+    private final BlacklistService blacklistService;
+    private final UserDetailsService userDetailsService;
     private final PathMatcher pathMatcher = new AntPathMatcher();
 
     private final List<String> EXCLUDED_URLS = List.of(
@@ -60,6 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final var authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String token;
         final String userEmail;
+        final TokenType tokenType;
 
         if(authHeader == null || !authHeader.startsWith(HEADER_BEGINNING)) {
             filterChain.doFilter(request, response);
@@ -67,7 +69,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         token =  authHeader.substring(HEADER_BEGINNING.length());
         userEmail = jwtService.extractUsername(token);
-        if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        tokenType = jwtService.extractTokenType(token);
+        if(
+                userEmail != null
+                && tokenType == TokenType.ACCESS // везде кроме refreshToken() используется быстрый accessToken
+                && SecurityContextHolder.getContext().getAuthentication() == null
+        ) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
             if(jwtService.isTokenValid(token, userDetails) &&

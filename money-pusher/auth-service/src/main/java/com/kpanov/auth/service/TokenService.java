@@ -1,8 +1,10 @@
 package com.kpanov.auth.service;
 
 import com.kpanov.auth.config.property.JwtProperties;
+import com.kpanov.auth.util.Messages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -26,7 +28,11 @@ public class TokenService {
             String newToken,
             Integer userId
     ) {
-        deleteToken(oldToken);
+        var fullOldToken = KEY_BEGINNING + oldToken;
+        var deleteResult = redisTemplate.compareAndDelete(fullOldToken, userId.toString());
+        if(!Boolean.TRUE.equals(deleteResult)) {
+            throw new BadCredentialsException(Messages.INVALID_REFRESH_TOKEN);
+        }
 
         saveToken(newToken, userId);
     }

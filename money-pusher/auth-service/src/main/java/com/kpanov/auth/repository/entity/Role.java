@@ -32,7 +32,7 @@ public enum Role {
         ArrayList<SimpleGrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_" + name()));
         permissions.forEach(permission ->
-                new SimpleGrantedAuthority(permission.name())
+                authorities.add(new SimpleGrantedAuthority(permission.getPermission()))
         );
 
         return authorities;

@@ -20,7 +20,7 @@ public class LogoutController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @RequestBody LogoutRequestDto request,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader
     ) {
         final String accessToken;
         if(authHeader == null || !authHeader.startsWith(HEADER_BEGINNING)) {

@@ -38,9 +38,9 @@ public class AuthenticationController {
 
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthenticationResponseDto> refreshToken(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader
     ) {
-        if(authHeader == null || !authHeader.contains(HEADER_BEGINNING)) {
+        if(authHeader == null || !authHeader.startsWith(HEADER_BEGINNING)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

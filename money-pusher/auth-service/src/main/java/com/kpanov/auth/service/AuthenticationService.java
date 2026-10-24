@@ -1,5 +1,7 @@
 package com.kpanov.auth.service;
 
+import com.kpanov.auth.exception.ValidationException;
+import com.kpanov.auth.repository.entity.Role;
 import com.kpanov.auth.repository.entity.UserEntity;
 import com.kpanov.auth.service.model.AuthenticationRequest;
 import com.kpanov.auth.service.model.AuthenticationResponse;
@@ -38,11 +40,15 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse register(RegisterRequest request) {
+        if(userService.isUserExists(request.email())) {
+            throw new ValidationException(Messages.USER_ALREADY_EXISTS.formatted(request.email()));
+        }
+
         var user = UserEntity.builder()
                 .nickname(request.nickname())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .role(request.role())
+                .role(Role.USER) /** в будущем надо добавить обработку ролей */
                 .build();
 
         userService.createUser(user);
@@ -63,7 +69,7 @@ public class AuthenticationService {
 
         final var user = userService.getUserByEmail(userEmail);
 
-        if(!tokenService.isTokenExists(token) || !jwtService.isTokenValid(token, user)) {
+        if(!jwtService.isTokenValid(token, user)) {
             throw new BadCredentialsException(Messages.INVALID_REFRESH_TOKEN);
         }
 

@@ -4,13 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+
 @Service
 @RequiredArgsConstructor
 public class BlacklistService {
     private final StringRedisTemplate redisTemplate;
 
-    public void blacklistToken(String token, Long duration) {
+    public void blacklistToken(String token, Long expiration) {
         var key = KEY_BEGINNING + token;
+        var duration = Duration.ofMillis(expiration);
+
         redisTemplate.opsForValue().set(key, BLACKLISTED, duration);
     }
 

@@ -16,6 +16,10 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public boolean isUserExists(String email) {
+        return userRepository.findUserByEmail(email).isPresent();
+    }
+
     public UserEntity getUserByEmail(String email) {
         return userRepository.findUserByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException(

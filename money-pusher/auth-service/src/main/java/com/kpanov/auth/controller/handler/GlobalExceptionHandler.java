@@ -1,5 +1,6 @@
 package com.kpanov.auth.controller.handler;
 
+import com.kpanov.auth.exception.ValidationException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,5 +41,17 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponseDto> handleException(ValidationException e) {
+        var error = "Bad request.";
+        var message = e.getMessage();
+        var timestamp = LocalDateTime.now(clock);
+        var response = new ErrorResponseDto(
+                timestamp, error, message
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }
