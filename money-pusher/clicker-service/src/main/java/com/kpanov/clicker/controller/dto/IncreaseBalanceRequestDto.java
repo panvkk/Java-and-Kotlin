@@ -6,5 +6,5 @@ public record IncreaseBalanceRequestDto(
         @JsonProperty("user_id")
         Integer userId,
         @JsonProperty("balance_increase")
-        Integer balanceIncrease
+        Long balanceIncrease
 ) { }
