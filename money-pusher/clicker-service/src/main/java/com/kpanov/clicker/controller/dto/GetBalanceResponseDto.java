@@ -1,4 +1,8 @@
 package com.kpanov.clicker.controller.dto;
 
-public record GetBalanceResponseDto() {
-}
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public record GetBalanceResponseDto(
+        @JsonProperty("user_balance")
+        Long userBalance
+) { }

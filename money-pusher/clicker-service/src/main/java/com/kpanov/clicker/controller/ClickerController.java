@@ -1,5 +1,6 @@
 package com.kpanov.clicker.controller;
 
+import com.kpanov.clicker.controller.dto.GetBalanceResponseDto;
 import com.kpanov.clicker.controller.dto.IncreaseBalanceRequestDto;
 import com.kpanov.clicker.service.ClickerService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class ClickerController {
     private final ClickerService clickerService;
 
-    @PatchMapping()
+    @PatchMapping
     public ResponseEntity<Void> increaseUserBalance(
             @RequestBody IncreaseBalanceRequestDto dto
     ) {
@@ -21,5 +22,13 @@ public class ClickerController {
         return ResponseEntity.ok().build();
     }
 
-    public ResponseEntity<>
+    @GetMapping("balance/{user_id}")
+    public ResponseEntity<GetBalanceResponseDto> getUserBalance(
+            @PathVariable("user_id") Integer userId
+    ) {
+        var responseBalance = clickerService.getUserBalance(userId);
+        var response = new GetBalanceResponseDto(responseBalance);
+
+        return ResponseEntity.ok().body(response);
+    }
 }
