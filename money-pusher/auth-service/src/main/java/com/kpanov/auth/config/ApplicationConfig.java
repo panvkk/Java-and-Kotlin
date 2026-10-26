@@ -1,6 +1,6 @@
 package com.kpanov.auth.config;
 
-import com.kpanov.auth.config.property.JwtProperties;
+import com.kpanov.auth.config.property.AuthJwtProperties;
 import com.kpanov.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,7 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Clock;
 
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties(AuthJwtProperties.class)
 @RequiredArgsConstructor
 public class ApplicationConfig {
     private final UserService userService;

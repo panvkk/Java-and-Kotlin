@@ -18,11 +18,6 @@ public class BlacklistService {
         redisTemplate.opsForValue().set(key, BLACKLISTED, duration);
     }
 
-    public boolean isTokenNotBlacklisted(String token) {
-        var key = KEY_BEGINNING + token;
-        return !redisTemplate.hasKey(key);
-    }
-
     private static final String BLACKLISTED = "blacklisted";
     private static final String KEY_BEGINNING = "blacklisted_access_token: ";
 }

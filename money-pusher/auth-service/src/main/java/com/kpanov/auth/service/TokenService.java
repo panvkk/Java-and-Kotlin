@@ -1,6 +1,6 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.config.property.JwtProperties;
+import com.kpanov.auth.config.property.AuthJwtProperties;
 import com.kpanov.auth.util.Messages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -13,7 +13,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class TokenService {
     private final StringRedisTemplate redisTemplate;
-    private final JwtProperties jwtProperties;
+    private final AuthJwtProperties jwtProperties;
 
     public void saveToken(String token, Integer userId) {
         var refreshTokenExpiration = jwtProperties.refreshTokenExpiration();

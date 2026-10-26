@@ -1,5 +1,7 @@
 plugins {
     id("java")
+    id("org.springframework.boot") version "4.1.2" apply false
+    id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
 group = "org.example"
@@ -9,10 +11,7 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-}
+dependencies {  }
 
 tasks.test {
     useJUnitPlatform()

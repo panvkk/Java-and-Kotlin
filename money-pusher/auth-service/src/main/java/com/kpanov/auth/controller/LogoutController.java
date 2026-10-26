@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import static com.kpanov.auth.util.Constants.HEADER_BEGINNING;
+import static com.kpanov.common.util.Constants.AUTH_HEADER_BEGINNING;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -23,10 +23,10 @@ public class LogoutController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader
     ) {
         final String accessToken;
-        if(authHeader == null || !authHeader.startsWith(HEADER_BEGINNING)) {
+        if(authHeader == null || !authHeader.startsWith(AUTH_HEADER_BEGINNING)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        accessToken = authHeader.substring(HEADER_BEGINNING.length());
+        accessToken = authHeader.substring(AUTH_HEADER_BEGINNING.length());
 
         logoutService.logout(accessToken, request.requestToken());
         SecurityContextHolder.clearContext();

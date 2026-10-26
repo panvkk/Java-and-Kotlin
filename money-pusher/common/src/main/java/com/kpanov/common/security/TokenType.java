@@ -1,3 +1,3 @@
-package com.kpanov.auth.service.model;
+package com.kpanov.common.security;
 
 public enum TokenType { ACCESS, REFRESH }

@@ -1,6 +1,6 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.config.property.JwtProperties;
+import com.kpanov.auth.config.property.AuthJwtProperties;
 import com.kpanov.auth.util.Messages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 public class LogoutService {
     private final TokenService tokenService;
     private final BlacklistService blacklistService;
-    private final JwtProperties jwtProperties;
+    private final AuthJwtProperties jwtProperties;
 
     public void logout(String accessToken, String refreshToken) {
         if(!tokenService.isTokenExists(refreshToken)) {

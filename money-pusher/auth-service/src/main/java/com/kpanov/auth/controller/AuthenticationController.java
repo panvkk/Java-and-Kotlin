@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static com.kpanov.auth.util.Constants.HEADER_BEGINNING;
+import static com.kpanov.common.util.Constants.AUTH_HEADER_BEGINNING;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -40,11 +40,11 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponseDto> refreshToken(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader
     ) {
-        if(authHeader == null || !authHeader.startsWith(HEADER_BEGINNING)) {
+        if(authHeader == null || !authHeader.startsWith(AUTH_HEADER_BEGINNING)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        final String token = authHeader.substring(HEADER_BEGINNING.length());
+        final String token = authHeader.substring(AUTH_HEADER_BEGINNING.length());
         var response = mappers.toDto(authenticationService.refreshToken(token));
 
         return ResponseEntity.ok(response);
