@@ -1,3 +1,3 @@
-package com.kpanov.common.security;
+package com.kpanov.common.security.jwt;
 
 public enum TokenType { ACCESS, REFRESH }

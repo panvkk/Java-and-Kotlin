@@ -1,7 +1,7 @@
 package com.kpanov.gateway;
 
-import com.kpanov.common.security.JwtUtils;
-import com.kpanov.common.security.TokenType;
+import com.kpanov.common.security.jwt.JwtUtils;
+import com.kpanov.common.security.jwt.TokenType;
 import com.kpanov.gateway.blacklist.BlacklistService;
 import com.kpanov.gateway.config.property.GatewayJwtProperties;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +16,9 @@ import org.springframework.util.PathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Objects;
 
-import static com.kpanov.common.util.Constants.AUTH_HEADER_BEGINNING;
+import static com.kpanov.common.util.Constants.*;
 
 @Component
 @RequiredArgsConstructor
@@ -37,22 +36,8 @@ public class JwtGlobalFilter implements GlobalFilter {
     }
 
 
-    private final List<String> EXCLUDED_URLS = List.of(
-            "/",
-            "/index.html",
-            "/api/v1/auth/**",
-
-            "/v2/api-docs",
-            "/v3/api-docs",
-            "/v3/api-docs/**",
-            "/swagger-resources",
-            "/swagger-resources/**",
-            "/swagger-ui/**",
-            "/swagger-ui.html"
-    );
-
     private boolean shouldNotFilter(String path) {
-        return EXCLUDED_URLS.stream()
+        return WHITE_LIST_URLS.stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 
@@ -74,18 +59,18 @@ public class JwtGlobalFilter implements GlobalFilter {
             return onError(exchange, HttpStatus.UNAUTHORIZED);
         }
         token = authHeader.substring(AUTH_HEADER_BEGINNING.length());
-        userEmail = jwtUtils.extractUsername(token);
-        tokenTypeStr = jwtUtils.extractTokenType(token);
+        userEmail = getJwtUtils().extractUsername(token);
+        tokenTypeStr = getJwtUtils().extractTokenType(token);
 
         // везде кроме refreshToken() используется быстрый accessToken
         if(userEmail == null || !Objects.equals(tokenTypeStr, TokenType.ACCESS.toString())) {
             return onError(exchange, HttpStatus.UNAUTHORIZED);
         }
-        if(!jwtUtils.isTokenValid(token) || blacklistService.isTokenBlacklisted(token)) {
+        if(!getJwtUtils().isTokenValid(token) || blacklistService.isTokenBlacklisted(token)) {
             return onError(exchange, HttpStatus.UNAUTHORIZED);
         }
         ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                .header(MUTATED_HEADER, userEmail)
+                .header(USERNAME_HEADER, userEmail)
                 .build();
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
@@ -96,5 +81,4 @@ public class JwtGlobalFilter implements GlobalFilter {
         return exchange.getResponse().setComplete();
     }
 
-    private static final String MUTATED_HEADER = "X-User-Name";
 }

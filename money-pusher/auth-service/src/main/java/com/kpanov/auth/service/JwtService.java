@@ -1,8 +1,8 @@
 package com.kpanov.auth.service;
 
 import com.kpanov.auth.config.property.AuthJwtProperties;
-import com.kpanov.common.security.JwtUtils;
-import com.kpanov.common.security.TokenType;
+import com.kpanov.common.security.jwt.JwtUtils;
+import com.kpanov.common.security.jwt.TokenType;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;

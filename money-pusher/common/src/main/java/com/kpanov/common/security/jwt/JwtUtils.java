@@ -1,4 +1,4 @@
-package com.kpanov.common.security;
+package com.kpanov.common.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
