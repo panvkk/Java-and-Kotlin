@@ -22,6 +22,7 @@ dependencyManagement {
 dependencies {
     implementation(project(":common-core"))
 
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:3.1.0")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webflux")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
