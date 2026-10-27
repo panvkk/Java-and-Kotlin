@@ -1,7 +1,7 @@
 package com.kpanov.gateway;
 
-import com.kpanov.common.security.jwt.JwtUtils;
-import com.kpanov.common.security.jwt.TokenType;
+import com.kpanov.common.jwt.JwtUtils;
+import com.kpanov.common.jwt.TokenType;
 import com.kpanov.gateway.blacklist.BlacklistService;
 import com.kpanov.gateway.config.property.GatewayJwtProperties;
 import lombok.RequiredArgsConstructor;

@@ -26,7 +26,7 @@ public class ClickerService {
                 .userNickname(currentEntity.getUserNickname())
                 .userEmail(currentEntity.getUserEmail())
                 .build();
-        repository.updateBalance(newBalanceEntity);
+        repository.save(newBalanceEntity);
     }
 
     private BalanceEntity getBalanceEntity(Integer userId) {

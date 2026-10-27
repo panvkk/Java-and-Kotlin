@@ -11,19 +11,19 @@ repositories {
     mavenCentral()
 }
 
-extra["springCloudVersion"] = "2023.0.5"
+val springCloudVersion = "2025.1.4"
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
     }
 }
 
 dependencies {
-    implementation(project(":common"))
+    implementation(project(":common-core"))
 
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.cloud:spring-cloud-starter-gateway")
+    implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webflux")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
     compileOnly("org.projectlombok:lombok")

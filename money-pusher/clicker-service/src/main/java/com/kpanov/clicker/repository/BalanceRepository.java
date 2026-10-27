@@ -7,6 +7,4 @@ import java.util.Optional;
 
 public interface BalanceRepository extends JpaRepository<BalanceEntity, Integer> {
     Optional<BalanceEntity> getBalanceEntityByUserId(Integer userId);
-
-    void updateBalance(BalanceEntity balance);
 }

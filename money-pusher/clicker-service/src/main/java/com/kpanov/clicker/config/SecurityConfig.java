@@ -1,12 +1,11 @@
-package com.kpanov.auth.security;
+package com.kpanov.clicker.config;
 
+import com.kpanov.common.security.HeaderAuthenticationFilter;
 import com.kpanov.common.security.handler.AppAccessDeniedHandler;
 import com.kpanov.common.security.handler.JwtAuthenticationEntryPoint;
-import com.kpanov.common.security.HeaderAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,7 +20,6 @@ import static com.kpanov.common.util.Constants.WHITE_LIST_URLS;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final AuthenticationProvider authProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -32,7 +30,6 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
-                .authenticationProvider(authProvider)
                 .addFilterBefore(headerFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -45,9 +42,10 @@ public class SecurityConfig {
                                 .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
-                                .accessDeniedHandler(appAccessDeniedHandler)
-                                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(appAccessDeniedHandler)
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 );
         return http.build();
     }
 }
+
