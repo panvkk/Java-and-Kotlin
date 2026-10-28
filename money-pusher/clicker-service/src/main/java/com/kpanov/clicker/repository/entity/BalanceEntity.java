@@ -23,8 +23,8 @@ public class BalanceEntity {
     private Long balance;
 
     @Column(name = "user_nickname")
-    private Integer userNickname;
+    private String userNickname;
 
     @Column(name = "user_email")
-    private Integer userEmail;
+    private String userEmail;
 }

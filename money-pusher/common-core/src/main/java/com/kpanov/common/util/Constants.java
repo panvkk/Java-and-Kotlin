@@ -11,6 +11,7 @@ public class Constants {
     public static final String USERNAME_HEADER = "X-User-Name";
 
     public static final List<String> WHITE_LIST_URLS = List.of(
+            "/actuator/**",
             "/",
             "/index.html",
             "/api/v1/auth/**",

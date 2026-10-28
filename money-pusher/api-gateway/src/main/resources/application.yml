@@ -11,13 +11,20 @@ spring:
 
   cloud:
     gateway:
-      routes:
-        - id: auth-service-route
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/logout
+      server:
+        webflux:
+          routes:
+            - id: auth-service-route
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/logout/**
 
-        - id: clicker-service-route
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/v1/clicker/**
+            - id: clicker-service-route
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/clicker/**
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
