@@ -14,20 +14,20 @@ import java.util.Optional;
 public class ClickerService {
     private final BalanceRepository repository;
 
-    public Long getUserBalance(Integer userId) {
-        return getBalanceEntity(userId)
+    public Long getUserBalance(String userEmail) {
+        return getBalanceEntity(userEmail)
                 .orElseThrow(()  ->
-                        new BalanceNotFoundException(Messages.BALANCE_NOT_FOUND.formatted(userId))
+                        new BalanceNotFoundException(Messages.BALANCE_NOT_FOUND.formatted(userEmail))
                 )
                 .getBalance();
     }
 
-    public void increaseBalance(Integer userId, Long balanceIncrease) {
-        var currentEntity = getBalanceEntity(userId).orElse(
+    public void increaseBalance(String userEmail, Long balanceIncrease) {
+        var currentEntity = getBalanceEntity(userEmail).orElse(
                 BalanceEntity.builder()
-                        .userId(userId)
+                        .userId(1)
                         .balance(0L)
-                        .userEmail("")
+                        .userEmail(userEmail)
                         .userNickname("")
                         .build()
         );
@@ -43,7 +43,7 @@ public class ClickerService {
         repository.save(newBalanceEntity);
     }
 
-    private Optional<BalanceEntity> getBalanceEntity(Integer userId) {
-        return repository.getBalanceEntityByUserId(userId);
+    private Optional<BalanceEntity> getBalanceEntity(String userEmail) {
+        return repository.getBalanceEntityByUserEmail(userEmail);
     }
 }
