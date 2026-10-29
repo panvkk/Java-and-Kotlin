@@ -3,13 +3,11 @@ package com.kpanov.auth.controller;
 import com.kpanov.auth.controller.dto.LogoutRequestDto;
 import com.kpanov.auth.service.LogoutService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import static com.kpanov.common.util.Constants.AUTH_HEADER_BEGINNING;
+import static com.kpanov.common.util.Constants.USERNAME_HEADER;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -19,16 +17,10 @@ public class LogoutController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @RequestBody LogoutRequestDto request,
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader
+            @RequestHeader(USERNAME_HEADER) String userEmail,
+            @RequestBody LogoutRequestDto dto
     ) {
-        final String accessToken;
-        if(authHeader == null || !authHeader.startsWith(AUTH_HEADER_BEGINNING)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        accessToken = authHeader.substring(AUTH_HEADER_BEGINNING.length());
-
-        logoutService.logout(accessToken, request.requestToken());
+        logoutService.logout(dto.accessToken(), dto.refreshToken(), userEmail);
         SecurityContextHolder.clearContext();
 
         return ResponseEntity.ok().build();
