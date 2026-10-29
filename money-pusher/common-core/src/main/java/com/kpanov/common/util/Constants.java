@@ -24,4 +24,6 @@ public class Constants {
             "/swagger-ui/**",
             "/swagger-ui.html"
     );
+
+    public static final String USER_EVENTS = "user_events";
 }

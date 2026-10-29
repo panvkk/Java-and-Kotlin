@@ -7,8 +7,6 @@ import com.kpanov.clicker.util.Messages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class ClickerService {
@@ -16,21 +14,11 @@ public class ClickerService {
 
     public Long getUserBalance(String userEmail) {
         return getBalanceEntity(userEmail)
-                .orElseThrow(()  ->
-                        new BalanceNotFoundException(Messages.BALANCE_NOT_FOUND.formatted(userEmail))
-                )
                 .getBalance();
     }
 
     public void increaseBalance(String userEmail, Long balanceIncrease) {
-        var currentEntity = getBalanceEntity(userEmail).orElse(
-                BalanceEntity.builder()
-                        .userId(1)
-                        .balance(0L)
-                        .userEmail(userEmail)
-                        .userNickname("")
-                        .build()
-        );
+        var currentEntity = getBalanceEntity(userEmail);
 
         var newBalance = currentEntity.getBalance() + balanceIncrease;                                                                                     // newBalance неплохие кроссовки кстати у меня 1906R
         var newBalanceEntity = BalanceEntity.builder()
@@ -43,7 +31,25 @@ public class ClickerService {
         repository.save(newBalanceEntity);
     }
 
-    private Optional<BalanceEntity> getBalanceEntity(String userEmail) {
-        return repository.getBalanceEntityByUserEmail(userEmail);
+    public void createNewUserBalance(
+            Integer userId,
+            String nickname,
+            String email
+    ) {
+        var newBalance = BalanceEntity.builder()
+                .userId(userId)
+                .userNickname(nickname)
+                .userEmail(email)
+                .balance(0L)
+                .build();
+
+        repository.save(newBalance);
+    }
+
+    private BalanceEntity getBalanceEntity(String userEmail) {
+        return repository.getBalanceEntityByUserEmail(userEmail)
+                .orElseThrow(()  ->
+                        new BalanceNotFoundException(Messages.BALANCE_NOT_FOUND.formatted(userEmail))
+                );
     }
 }

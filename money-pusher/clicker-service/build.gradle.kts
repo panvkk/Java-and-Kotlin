@@ -23,6 +23,8 @@ dependencies {
 
     runtimeOnly("org.postgresql:postgresql")
 
+    implementation("org.springframework.boot:spring-boot-starter-kafka")
+
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     testCompileOnly("org.projectlombok:lombok")

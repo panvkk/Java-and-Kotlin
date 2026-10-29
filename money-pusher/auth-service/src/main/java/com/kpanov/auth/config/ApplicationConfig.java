@@ -2,10 +2,15 @@ package com.kpanov.auth.config;
 
 import com.kpanov.auth.config.property.AuthJwtProperties;
 import com.kpanov.auth.service.UserService;
+import com.kpanov.common.event.UserCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -48,5 +53,16 @@ public class ApplicationConfig {
     @Bean
     public Clock getClock() {
         return Clock.systemDefaultZone();
+    }
+
+
+    @Bean
+    public KafkaTemplate<Integer, UserCreatedEvent> kafkaTemplate(ProducerFactory<Integer, UserCreatedEvent> factory) {
+        return new KafkaTemplate<>(factory);
+    }
+
+    @Bean
+    public ProducerFactory<Integer, UserCreatedEvent> producerFactory(KafkaProperties kafkaProperties) {
+        return new DefaultKafkaProducerFactory<>(kafkaProperties.buildProducerProperties());
     }
 }
