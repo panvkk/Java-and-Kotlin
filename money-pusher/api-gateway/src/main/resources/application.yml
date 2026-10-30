@@ -22,7 +22,7 @@ spring:
             - id: clicker-service-route
               uri: http://localhost:8082
               predicates:
-                - Path=/api/v1/clicker/**
+                - Path=/api/v1/clicker/**,/api/v1/leaderboard
 
 logging:
   level:

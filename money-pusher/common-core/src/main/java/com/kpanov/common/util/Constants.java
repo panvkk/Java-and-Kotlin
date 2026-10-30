@@ -3,6 +3,8 @@ package com.kpanov.common.util;
 import java.util.List;
 
 public class Constants {
+    public static final Integer LEADERBOARD_LENGTH = 10;
+
 
     public static final String BLACKLISTED_KEY_BEGINNING = "blacklisted_access_token: ";
 
@@ -15,6 +17,7 @@ public class Constants {
             "/",
             "/index.html",
             "/api/v1/auth/**",
+            "/api/v1/leaderboard",
 
             "/v2/api-docs",
             "/v3/api-docs",

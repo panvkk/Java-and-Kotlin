@@ -2,6 +2,7 @@ package com.kpanov.clicker.repository.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "users_balance_table")
+@Table(
+        name = "users_balance_table",
+        indexes = { @Index(name = "idx_balance", columnList = "balance") }
+)
 public class BalanceEntity {
 
     @Id @Column(name = "user_id")
