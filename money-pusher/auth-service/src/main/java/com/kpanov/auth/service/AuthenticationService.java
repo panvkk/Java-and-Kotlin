@@ -3,6 +3,7 @@ package com.kpanov.auth.service;
 import com.kpanov.auth.exception.ValidationException;
 import com.kpanov.auth.repository.entity.Role;
 import com.kpanov.auth.repository.entity.UserEntity;
+import com.kpanov.auth.service.kafka.UserProducer;
 import com.kpanov.auth.service.model.AuthenticationRequest;
 import com.kpanov.auth.service.model.AuthenticationResponse;
 import com.kpanov.auth.service.model.RegisterRequest;
@@ -22,6 +23,7 @@ public class AuthenticationService {
     private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
+    private final UserProducer userProducer;
 
     public AuthenticationResponse login(AuthenticationRequest request) {
         authenticationManager.authenticate(
@@ -56,6 +58,9 @@ public class AuthenticationService {
         String refreshToken = jwtService.generateRefreshToken(user);
 
         tokenService.saveToken(refreshToken, user.getId());
+
+        userProducer.publishUserCreated(user.getId(), user.getNickname(), user.getEmail());
+
         return new AuthenticationResponse(accessToken, refreshToken);
     }
 

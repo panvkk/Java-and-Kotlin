@@ -1,8 +1,8 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.config.property.JwtProperties;
-import com.kpanov.auth.service.model.TokenType;
-import io.jsonwebtoken.Claims;
+import com.kpanov.auth.config.property.AuthJwtProperties;
+import com.kpanov.common.jwt.JwtUtils;
+import com.kpanov.common.jwt.TokenType;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -14,17 +14,23 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
 public class JwtService {
     private final Clock clock;
-    private final JwtProperties jwtProperties;
+    private final AuthJwtProperties jwtProperties;
+    private JwtUtils jwtUtils;
+
+    private JwtUtils getJwtUtils() {
+        if(jwtUtils == null) {
+            jwtUtils = new JwtUtils(jwtProperties.secretKey(), clock);
+        }
+        return jwtUtils;
+    }
 
     private static final String TOKEN_TYPE_CLAIM = "token_type";
 
@@ -74,45 +80,20 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails userDetails) {
         var username = extractUsername(token);
         return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+                && !getJwtUtils().isTokenValid(token);
     }
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return getJwtUtils().extractUsername(token);
     }
 
     public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        return getJwtUtils().extractExpiration(token);
     }
 
     public TokenType extractTokenType(String token) {
-        return extractClaim(token, ( claims ->
-            {
-                var tokenTypeStr = claims.get(TOKEN_TYPE_CLAIM, String.class);
-                return TokenType.valueOf(tokenTypeStr);
-            }
-        ));
-    }
-
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    public boolean isTokenExpired(String token) {
-        var expiration = extractExpiration(token);
-        Date now = Date.from(Instant.now(clock));
-
-        return expiration.before(now);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        String tokenTypeStr = getJwtUtils().extractTokenType(token);
+        return TokenType.valueOf(tokenTypeStr);
     }
 
     private Key getSigningKey() {

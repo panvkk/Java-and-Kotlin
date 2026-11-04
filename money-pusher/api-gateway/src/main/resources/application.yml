@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: local
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service-route
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/logout/**
+
+            - id: clicker-service-route
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/clicker/**,/api/v1/leaderboard
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
