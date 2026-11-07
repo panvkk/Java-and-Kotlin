@@ -1,8 +1,8 @@
-package com.kpanov.common.event;
+package com.kpanov.common.event.transfer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record TransferRequestEvent(
+public record TransferMetadata(
         Long id,
         @JsonProperty("initiator_email")
         String initiatorEmail,
