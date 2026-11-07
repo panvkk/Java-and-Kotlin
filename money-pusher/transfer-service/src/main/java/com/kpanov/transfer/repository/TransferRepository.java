@@ -6,9 +6,11 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface TransferRepository extends JpaRepository<Long, TransferEntity> {
+public interface TransferRepository extends JpaRepository<TransferEntity, Long> {
 
-    List<TransferEntity> getTransfersByInitiatorId(Long id);
-
-    List<TransferEntity> getTransfersByTargetId(Long id);
+    @Query(value =
+            "SELECT * FROM transfers_table " +
+            "WHERE initiator_email = :email OR target_id = :email " +
+            "ORDER BY crated_at DESC", nativeQuery = true)
+    List<TransferEntity> getUserTransfers(String email);
 }

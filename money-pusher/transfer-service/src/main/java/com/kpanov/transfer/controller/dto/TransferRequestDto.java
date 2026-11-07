@@ -6,5 +6,7 @@ public record TransferRequestDto(
         @JsonProperty("target_user_email")
         String targetUserEmail,
         @JsonProperty("transfer_amount")
-        Long transferAmount
+        Long transferAmount,
+        @JsonProperty("additional_message")
+        String additionalMessage
 ) { }

@@ -1,9 +1,6 @@
 package com.kpanov.transfer.repository.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +19,9 @@ public class TransferEntity {
     @Id @Column(name = "transfer_id")
     private Long transferId;
 
+    @Column(name = "transfer_amount")
+    private Long transferAmount;
+
     @Column(name = "initiator_email")
     private String initiatorEmail;
 
@@ -30,6 +30,9 @@ public class TransferEntity {
 
     @Column(name = "additional_message")
     private String additionalMessage;
+
+    @Enumerated(EnumType.STRING)
+    private TransferStatus status;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

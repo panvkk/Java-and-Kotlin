@@ -29,4 +29,5 @@ public class Constants {
     );
 
     public static final String USER_EVENTS = "user_events";
+    public static final String TRANSFER_EVENTS = "transfer_events";
 }
