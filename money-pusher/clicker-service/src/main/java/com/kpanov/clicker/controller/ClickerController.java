@@ -4,6 +4,7 @@ import com.kpanov.clicker.controller.dto.GetBalanceResponseDto;
 import com.kpanov.clicker.controller.dto.IncreaseBalanceRequestDto;
 import com.kpanov.clicker.service.ClickerService;
 import com.kpanov.common.util.Constants;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ public class ClickerController {
 
     @PatchMapping
     public ResponseEntity<Void> increaseUserBalance(
+            @Parameter(hidden = true)
             @RequestHeader(USERNAME_HEADER) String userEmail,
             @RequestBody IncreaseBalanceRequestDto dto
     ) {
