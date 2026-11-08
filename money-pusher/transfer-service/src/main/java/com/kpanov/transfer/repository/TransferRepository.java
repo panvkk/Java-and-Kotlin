@@ -14,8 +14,8 @@ public interface TransferRepository extends JpaRepository<TransferEntity, Long> 
 
     @Query(value =
             "SELECT * FROM transfers_table " +
-            "WHERE initiator_email = :email OR target_id = :email " +
-            "ORDER BY crated_at DESC", nativeQuery = true)
+            "WHERE initiator_email = :email OR target_email = :email " +
+            "ORDER BY created_at DESC", nativeQuery = true)
     List<TransferEntity> getUserTransfers(@Param(value = "email") String email);
 
     Optional<TransferEntity> getTransferById(Long id);

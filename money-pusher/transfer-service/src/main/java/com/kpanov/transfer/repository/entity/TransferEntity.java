@@ -17,7 +17,8 @@ import java.time.Instant;
 @Table(name = "transfers_table")
 public class TransferEntity {
 
-    @Id private Long id;
+    @Id @GeneratedValue
+    private Long id;
 
     @Column(name = "transfer_amount")
     private Long transferAmount;

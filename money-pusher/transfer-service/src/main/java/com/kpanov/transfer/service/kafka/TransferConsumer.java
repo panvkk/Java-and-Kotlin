@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import static com.kpanov.common.util.Constants.TRANSFER_EVENTS;
+import static com.kpanov.common.util.Constants.*;
 
 @Service
 @RequiredArgsConstructor
@@ -17,21 +17,21 @@ public class TransferConsumer {
     private final TransferService transferService;
     private final TransferProducer transferProducer;
 
-    @KafkaListener(topics = TRANSFER_EVENTS)
+    @KafkaListener(topics = DEPOSIT_SUCCESS_EVENTS)
     public void handleTransferSuccess(DepositSuccessEvent event) {
         var metadata = event.metadata();
 
         transferService.processTransferSuccess(metadata.id());
     }
 
-    @KafkaListener(topics = TRANSFER_EVENTS)
+    @KafkaListener(topics = DEDUCTION_FAILED_EVENTS)
     public void handleDeductionFailed(DeductionFailedEvent event) {
         var metadata = event.metadata();
 
         transferService.processTransferFailed(metadata.id());
     }
 
-    @KafkaListener(topics = TRANSFER_EVENTS)
+    @KafkaListener(topics = DEPOSIT_FAILED_EVENTS)
     public void handleDepositFailed(DepositFailedEvent event) {
         var metadata = event.metadata();
 

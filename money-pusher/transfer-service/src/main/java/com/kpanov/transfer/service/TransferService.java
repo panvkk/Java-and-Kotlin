@@ -11,11 +11,17 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TransferService {
     private final TransferRepository repository;
     private final TransferProducer transferProducer;
+
+    public List<TransferEntity> getUserTransfers(String userEmail) {
+        return repository.getUserTransfers(userEmail);
+    }
 
     @Transactional
     public TransferEntity requestTransfer(TransferRequestModel model) {

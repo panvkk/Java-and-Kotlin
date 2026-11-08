@@ -22,14 +22,11 @@ public interface BalanceRepository extends JpaRepository<BalanceEntity, Integer>
     List<BalanceEntity> getTopUsersByBalance(Integer limit);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query(
-            value = "SELECT * FROM user_balance_table " +
-                    "WHERE user_email = :email ",
-            nativeQuery = true
-    )
+    @Query(value = "SELECT b FROM BalanceEntity b " +
+                    "WHERE b.userEmail = :email ")
     Optional<BalanceEntity> getBalanceWithLock(String email);
 
     @Modifying
-    @Query("UPDATE BalanceEntity b SET b.balance = :balance WHERE b.email = :email ")
+    @Query("UPDATE BalanceEntity b SET b.balance = :balance WHERE b.userEmail = :email ")
     void updateBalance(String email, Long balance);
 }
