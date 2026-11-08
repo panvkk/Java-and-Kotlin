@@ -1,6 +1,7 @@
 package com.kpanov.clicker.service.kafka;
 
 import com.kpanov.clicker.service.BalanceService;
+import com.kpanov.common.event.transfer.DeductionSuccessEvent;
 import com.kpanov.common.event.transfer.TransferRequestEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,7 +15,31 @@ public class TransferConsumer {
     private final BalanceService balanceService;
 
     @KafkaListener(topics = TRANSFER_EVENTS)
-    public void handleUserCreated(TransferRequestEvent event) {
+    public void handleTransferRequest(TransferRequestEvent event) {
+        var metadata = event.metadata();
+        balanceService.deductMoney(
+                metadata.id(),
+                metadata.initiatorEmail(),
+                metadata.targetEmail(),
+                metadata.transferAmount()
+        );
+    }
 
+    @KafkaListener(topics = TRANSFER_EVENTS)
+    public void handleDeductionSuccess(DeductionSuccessEvent event) {
+        var metadata = event.metadata();
+        balanceService.depositMoney(
+                metadata.id(),
+                metadata.initiatorEmail(),
+                metadata.targetEmail(),
+                metadata.transferAmount()
+        );
+    }
+
+    @KafkaListener(topics = TRANSFER_EVENTS)
+    public void handleCompensateDeduction(DeductionSuccessEvent event) {
+        var metadata = event.metadata();
+
+        balanceService.compensateDeduction(metadata.initiatorEmail(), metadata.transferAmount());
     }
 }

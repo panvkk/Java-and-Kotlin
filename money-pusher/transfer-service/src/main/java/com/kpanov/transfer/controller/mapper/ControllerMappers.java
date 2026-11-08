@@ -9,7 +9,7 @@ public class ControllerMappers {
 
     public TransferResponseDto toDto(TransferEntity entity) {
         return new TransferResponseDto(
-                entity.getTransferId(),
+                entity.getId(),
                 entity.getTransferAmount(),
                 entity.getInitiatorEmail(),
                 entity.getTargetEmail(),

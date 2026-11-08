@@ -1,5 +1,7 @@
 package com.kpanov.transfer.service;
 
+import com.kpanov.common.event.transfer.TransferMetadata;
+import com.kpanov.common.event.transfer.TransferRequestEvent;
 import com.kpanov.transfer.repository.TransferRepository;
 import com.kpanov.transfer.repository.entity.TransferEntity;
 import com.kpanov.transfer.repository.entity.TransferStatus;
@@ -27,12 +29,25 @@ public class TransferService {
 
         var createdTransfer = repository.save(entity);
 
-        transferProducer.publishTransferRequest(
-                createdTransfer.getTransferId(),
-                createdTransfer.getInitiatorEmail(),
-                createdTransfer.getTargetEmail(),
-                createdTransfer.getTransferAmount()
+        var event = new TransferRequestEvent(
+                new TransferMetadata(
+                        createdTransfer.getId(),
+                        createdTransfer.getInitiatorEmail(),
+                        createdTransfer.getTargetEmail(),
+                        createdTransfer.getTransferAmount()
+                )
         );
+        transferProducer.publishTransferRequest(event, createdTransfer.getId());
         return createdTransfer;
+    }
+
+    @Transactional
+    public void processTransferSuccess(Long transferId) {
+        repository.updateTransferStatus(transferId, TransferStatus.SUCCESS);
+    }
+
+    @Transactional
+    public void processTransferFailed(Long transferId) {
+        repository.updateTransferStatus(transferId, TransferStatus.FAILED);
     }
 }

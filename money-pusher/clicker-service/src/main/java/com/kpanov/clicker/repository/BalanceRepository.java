@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,7 +19,7 @@ public interface BalanceRepository extends JpaRepository<BalanceEntity, Integer>
             value = "SELECT * FROM users_balance_table ORDER BY balance DESC LIMIT :limit",
             nativeQuery = true
     )
-    List<BalanceEntity> getTopUsersByBalance(@Param("limit") Integer limit);
+    List<BalanceEntity> getTopUsersByBalance(Integer limit);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query(
@@ -26,5 +27,9 @@ public interface BalanceRepository extends JpaRepository<BalanceEntity, Integer>
                     "WHERE user_email = :email ",
             nativeQuery = true
     )
-    Optional<BalanceEntity> getBalanceWithLock(@Param("email") String email);
+    Optional<BalanceEntity> getBalanceWithLock(String email);
+
+    @Modifying
+    @Query("UPDATE BalanceEntity b SET b.balance = :balance WHERE b.email = :email ")
+    void updateBalance(String email, Long balance);
 }

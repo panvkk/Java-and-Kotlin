@@ -16,8 +16,8 @@ import java.time.Instant;
 @AllArgsConstructor
 @Table(name = "transfers_table")
 public class TransferEntity {
-    @Id @Column(name = "transfer_id")
-    private Long transferId;
+
+    @Id private Long id;
 
     @Column(name = "transfer_amount")
     private Long transferAmount;

@@ -1,11 +1,14 @@
 package com.kpanov.transfer.repository;
 
 import com.kpanov.transfer.repository.entity.TransferEntity;
+import com.kpanov.transfer.repository.entity.TransferStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TransferRepository extends JpaRepository<TransferEntity, Long> {
 
@@ -14,4 +17,10 @@ public interface TransferRepository extends JpaRepository<TransferEntity, Long> 
             "WHERE initiator_email = :email OR target_id = :email " +
             "ORDER BY crated_at DESC", nativeQuery = true)
     List<TransferEntity> getUserTransfers(@Param(value = "email") String email);
+
+    Optional<TransferEntity> getTransferById(Long id);
+
+    @Modifying
+    @Query("UPDATE TransferEntity t SET t.status = :status WHERE t.id = :id")
+    void updateTransferStatus(Long id, TransferStatus status);
 }
