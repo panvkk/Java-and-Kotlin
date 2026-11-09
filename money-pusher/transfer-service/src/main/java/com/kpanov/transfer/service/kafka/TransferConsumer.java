@@ -1,9 +1,6 @@
 package com.kpanov.transfer.service.kafka;
 
-import com.kpanov.common.event.transfer.CompensateDeductionEvent;
-import com.kpanov.common.event.transfer.DeductionFailedEvent;
-import com.kpanov.common.event.transfer.DepositFailedEvent;
-import com.kpanov.common.event.transfer.DepositSuccessEvent;
+import com.kpanov.common.event.transfer.*;
 import com.kpanov.transfer.service.TransferService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -22,6 +19,11 @@ public class TransferConsumer {
         var metadata = event.metadata();
 
         transferService.processTransferSuccess(metadata.id());
+    }
+
+    @KafkaListener(topics = INSUFFICIENT_FUNDS_EVENTS)
+    public void handleInsufficientFunds(InsufficientFundsEvent event) {
+        transferService.processTransferFailed(event.transferId());
     }
 
     @KafkaListener(topics = DEDUCTION_FAILED_EVENTS)

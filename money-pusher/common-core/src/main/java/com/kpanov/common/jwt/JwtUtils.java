@@ -1,6 +1,11 @@
 package com.kpanov.common.jwt;
 
+import com.kpanov.common.exception.InvalidJwtException;
+import com.kpanov.common.exception.TokenExpiredException;
+import com.kpanov.common.util.Messages;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -50,8 +55,14 @@ public class JwtUtils {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+        try {
+            final Claims claims = extractAllClaims(token);
+            return claimsResolver.apply(claims);
+        } catch (ExpiredJwtException e) {
+            throw new TokenExpiredException(Messages.TOKEN_EXPIRED.formatted(e.getClaims().getExpiration()));
+        } catch (JwtException e) {
+            throw new InvalidJwtException(Messages.INVALID_JWT.formatted(e.getMessage()));
+        }
     }
 
     public boolean isTokenExpired(String token) {
@@ -69,3 +80,4 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(bytes);
     }
 }
+
