@@ -80,7 +80,7 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails userDetails) {
         var username = extractUsername(token);
         return username.equals(userDetails.getUsername())
-                && !getJwtUtils().isTokenValid(token);
+                && getJwtUtils().isTokenValid(token);
     }
 
     public String extractUsername(String token) {

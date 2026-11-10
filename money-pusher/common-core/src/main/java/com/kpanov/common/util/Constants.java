@@ -22,6 +22,8 @@ public class Constants {
             "/v2/api-docs",
             "/v3/api-docs",
             "/v3/api-docs/**",
+
+            "/favicon.ico",
             "/swagger-resources",
             "/swagger-resources/**",
             "/swagger-ui/**",
@@ -29,4 +31,12 @@ public class Constants {
     );
 
     public static final String USER_EVENTS = "user_events";
+    public static final String COMPENSATE_DEDUCTION_EVENTS = "compensate_deduction_events";
+    public static final String DEDUCTION_FAILED_EVENTS = "deduction_failed_events";
+    public static final String DEDUCTION_SUCCESS_EVENTS = "deduction_success_events";
+    public static final String DEPOSIT_FAILED_EVENTS = "deposit_failed_events";
+    public static final String DEPOSIT_SUCCESS_EVENTS = "deposit_success_events";
+    public static final String INSUFFICIENT_FUNDS_EVENTS = "insufficient_funds_events";
+    public static final String TRANSFER_REQUEST_EVENTS = "transfer_events";
+
 }
