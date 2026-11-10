@@ -1,0 +1,7 @@
+# Keep local secrets and build artifacts out of Docker build contexts.
+**/.env
+.git
+.gradle
+**/build
+.idea
+frontend

@@ -1,9 +1,18 @@
 server:
-  port: 8083
+  port: ${TRANSFER_SERVICE_PORT:8083}
 
 spring:
+  # Local development only: load money-pusher/.env as a properties file.
+  # In Docker/CI the same values are provided as real environment variables.
+  config:
+    import:
+      - optional:file:./.env[.properties]
+      - optional:file:../.env[.properties]
+      - optional:file:../../.env[.properties]
+      - optional:file:./money-pusher/.env[.properties]
+
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: transfer-service-group
       auto-offset-reset: earliest
@@ -14,11 +23,13 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
   datasource:
-    url: jdbc:postgresql://localhost:5434/transfer-service_db
-    username: postgres
-    password: postgres_password
+    url: ${TRANSFER_DB_URL:jdbc:postgresql://localhost:5434/transfer-service_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update

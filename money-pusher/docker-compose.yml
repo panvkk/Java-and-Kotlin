@@ -1,11 +1,86 @@
+# Single source of truth for money-pusher infrastructure.
+#
+# Run from this directory:
+#   cp .env.example .env   # first time only
+#   docker compose up -d
+#
+# All secrets come from .env (git-ignored). No credentials are stored here.
+
+name: money-pusher
+
 services:
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: money-pusher-postgres
+    environment:
+      POSTGRES_DB: ${AUTH_DB_NAME:-money-pusher_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in money-pusher/.env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${AUTH_DB_NAME:-money-pusher_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-clicker:
+    image: postgres:16-alpine
+    container_name: clicker-service-postgres
+    environment:
+      POSTGRES_DB: ${CLICKER_DB_NAME:-clicker-service_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in money-pusher/.env}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_clicker_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${CLICKER_DB_NAME:-clicker-service_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-transfer:
+    image: postgres:16-alpine
+    container_name: transfer-service-postgres
+    environment:
+      POSTGRES_DB: ${TRANSFER_DB_NAME:-transfer-service_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in money-pusher/.env}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_transfer_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${TRANSFER_DB_NAME:-transfer-service_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: money-pusher-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
     ports:
       - "9092:9092"
     environment:
-      CLUSTER_ID: "ciWo7TVsQPih12W7a2989g"
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:-ciWo7TVsQPih12W7a2989g}
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       PLAINTEXT_HOST: localhost:9092
@@ -20,6 +95,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -29,3 +106,13 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kafka
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_started
+
+volumes:
+  postgres_auth_data:
+  postgres_clicker_data:
+  postgres_transfer_data:
+  redis_data:
+  kafka_data:
