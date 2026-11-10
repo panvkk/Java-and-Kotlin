@@ -1,12 +1,15 @@
 package com.kpanov.transfer.controller.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.*;
 
 public record TransferRequestDto(
         @JsonProperty("target_user_email")
-        String targetUserEmail,
+        @NotBlank @Email String targetUserEmail,
+
         @JsonProperty("transfer_amount")
-        Long transferAmount,
+        @NotNull @Positive Long transferAmount,
+
         @JsonProperty("additional_message")
-        String additionalMessage
+        @Size(max = 255) String additionalMessage
 ) { }

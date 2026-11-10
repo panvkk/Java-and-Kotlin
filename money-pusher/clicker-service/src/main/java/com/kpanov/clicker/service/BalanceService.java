@@ -97,8 +97,8 @@ public class BalanceService {
             );
 
         } else {
-            transferProducer.publishDeductionFailed(
-                    new DeductionFailedEvent(
+            transferProducer.publishDepositFailed(
+                    new DepositFailedEvent(
                             new TransferMetadata(
                                     transferId, initiatorEmail, targetEmail, transferAmount
                             )
