@@ -5,11 +5,13 @@ import com.kpanov.common.event.transfer.CompensateDeductionEvent;
 import com.kpanov.common.event.transfer.DeductionSuccessEvent;
 import com.kpanov.common.event.transfer.TransferRequestEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import static com.kpanov.common.util.Constants.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransferConsumer {
@@ -17,6 +19,11 @@ public class TransferConsumer {
 
     @KafkaListener(topics = TRANSFER_REQUEST_EVENTS)
     public void handleTransferRequest(TransferRequestEvent event) {
+        if(event == null || event.metadata() == null) {
+            log.error("Dropping transfer-request event: metadata is missing");
+            return;
+        }
+
         var metadata = event.metadata();
         balanceService.deductMoney(
                 metadata.id(),
@@ -28,6 +35,11 @@ public class TransferConsumer {
 
     @KafkaListener(topics = DEDUCTION_SUCCESS_EVENTS)
     public void handleDeductionSuccess(DeductionSuccessEvent event) {
+        if(event == null || event.metadata() == null) {
+            log.error("Dropping deduction-success event: metadata is missing");
+            return;
+        }
+
         var metadata = event.metadata();
         balanceService.depositMoney(
                 metadata.id(),
@@ -39,6 +51,11 @@ public class TransferConsumer {
 
     @KafkaListener(topics = COMPENSATE_DEDUCTION_EVENTS)
     public void handleCompensateDeduction(CompensateDeductionEvent event) {
+        if(event == null || event.metadata() == null) {
+            log.error("Dropping compensate-deduction event: metadata is missing");
+            return;
+        }
+
         var metadata = event.metadata();
 
         balanceService.compensateDeduction(metadata.initiatorEmail(), metadata.transferAmount());

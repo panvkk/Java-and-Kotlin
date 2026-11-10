@@ -6,6 +6,7 @@ import com.kpanov.transfer.controller.dto.UserTransfersResponseDto;
 import com.kpanov.transfer.controller.mapper.ControllerMappers;
 import com.kpanov.transfer.service.TransferService;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +39,7 @@ public class    TransferController {
     public ResponseEntity<TransferResponseDto> transfer(
             @Parameter(hidden = true)
             @RequestHeader(USERNAME_HEADER) String initiatorEmail,
-            @RequestBody TransferRequestDto dto
+            @Valid @RequestBody TransferRequestDto dto
     ) {
         var response = transferService.requestTransfer(mappers.toModel(dto, initiatorEmail));
 

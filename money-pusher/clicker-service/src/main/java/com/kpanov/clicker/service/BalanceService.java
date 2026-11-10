@@ -6,8 +6,10 @@ import com.kpanov.clicker.service.kafka.TransferProducer;
 import com.kpanov.common.event.transfer.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BalanceService {
@@ -21,6 +23,12 @@ public class BalanceService {
             String targetEmail,
             Long transferAmount
     ) {
+        var deductionFailed = validate(transferId, initiatorEmail, targetEmail, transferAmount);
+        if(deductionFailed != null) {
+            publishDeductionFailed(deductionFailed);
+            return;
+        }
+
         var initiatorBalance = repository.getBalanceWithLock(initiatorEmail);
 
         if(initiatorBalance.isPresent()) {
@@ -60,6 +68,16 @@ public class BalanceService {
             String initiatorEmail,
             Long transferAmount
     ) {
+        if(isBlank(initiatorEmail)) {
+            log.error("Dropping compensate-deduction event: initiator email is blank");
+            return;
+        }
+
+        if(transferAmount == null || transferAmount <= 0) {
+            log.error("Dropping compensate-deduction event: transfer amount is not positive");
+            return;
+        }
+
         var initiatorBalance = repository.getBalanceWithLock(initiatorEmail);
 
         if(initiatorBalance.isPresent()) {
@@ -79,6 +97,12 @@ public class BalanceService {
             String targetEmail,
             Long transferAmount
     ) {
+        var invalidEvent = validate(transferId, initiatorEmail, targetEmail, transferAmount);
+        if(invalidEvent != null) {
+            publishDepositFailed(invalidEvent.metadata());
+            return;
+        }
+
         var targetBalance = repository.getBalanceWithLock(targetEmail);
 
         if(targetBalance.isPresent()) {
@@ -106,5 +130,62 @@ public class BalanceService {
                     transferId
             );
         }
+    }
+
+    /**
+     * Проверяет событие, пришедшее из Kafka. Возвращает {@link DeductionFailedEvent},
+     * если переводить деньги нельзя, и {@code null}, если событие корректное.
+     *
+     * <p>Валидация живёт здесь, а не только в контроллере transfer-service, потому что
+     * топик — открытая граница доверия: сообщение мог отправить кто угодно, поля могли
+     * не заполниться при десериализации, а старое сообщение могло быть перечитано после
+     * сброса offset'ов.
+     */
+    private DeductionFailedEvent validate(
+            Long transferId,
+            String initiatorEmail,
+            String targetEmail,
+            Long transferAmount
+    ) {
+        var invalid = transferId == null
+                || transferAmount == null
+                || transferAmount <= 0
+                || isBlank(initiatorEmail)
+                || isBlank(targetEmail)
+                || initiatorEmail.equals(targetEmail);
+
+        if(!invalid) {
+            return null;
+        }
+
+        return new DeductionFailedEvent(
+                new TransferMetadata(transferId, initiatorEmail, targetEmail, transferAmount)
+        );
+    }
+
+    private void publishDeductionFailed(DeductionFailedEvent event) {
+        var metadata = event.metadata();
+
+        if(metadata.id() == null) {
+            log.error("Dropping invalid transfer event: transfer id is missing");
+            return;
+        }
+
+        log.warn("Invalid transfer event, publishing deduction-failed: transferId={}", metadata.id());
+        transferProducer.publishDeductionFailed(event, metadata.id());
+    }
+
+    private void publishDepositFailed(TransferMetadata metadata) {
+        if(metadata.id() == null) {
+            log.error("Dropping invalid transfer event: transfer id is missing");
+            return;
+        }
+
+        log.warn("Invalid transfer event, publishing deposit-failed: transferId={}", metadata.id());
+        transferProducer.publishDepositFailed(new DepositFailedEvent(metadata), metadata.id());
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

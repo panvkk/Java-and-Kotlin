@@ -2,16 +2,19 @@ package com.kpanov.transfer.service;
 
 import com.kpanov.common.event.transfer.TransferMetadata;
 import com.kpanov.common.event.transfer.TransferRequestEvent;
+import com.kpanov.common.exception.ValidationException;
 import com.kpanov.transfer.repository.TransferRepository;
 import com.kpanov.transfer.repository.entity.TransferEntity;
 import com.kpanov.transfer.repository.entity.TransferStatus;
 import com.kpanov.transfer.service.kafka.TransferProducer;
 import com.kpanov.transfer.service.model.TransferRequestModel;
+import com.kpanov.transfer.util.Messages;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,8 @@ public class TransferService {
 
     @Transactional
     public TransferEntity requestTransfer(TransferRequestModel model) {
+        validateEmails(model.initiatorUserEmail(), model.targetUserEmail());
+
         var entity = TransferEntity.builder()
                 .initiatorEmail(model.initiatorUserEmail())
                 .targetEmail(model.targetUserEmail())
@@ -45,6 +50,12 @@ public class TransferService {
         );
         transferProducer.publishTransferRequest(event, createdTransfer.getId());
         return createdTransfer;
+    }
+
+    private void validateEmails(String initiatorEmail, String targetEmail) {
+        if(Objects.equals(initiatorEmail, targetEmail)) {
+            throw new ValidationException(Messages.EQUAL_EMAILS);
+        }
     }
 
     @Transactional

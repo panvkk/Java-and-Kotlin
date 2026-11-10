@@ -4,7 +4,9 @@ import java.util.List;
 
 public class Constants {
     public static final Integer LEADERBOARD_LENGTH = 10;
+    public static final int MIN_JWT_SECRET_SIZE = 44;
 
+    public static final int MAX_TRANSFER_ADDITIONAL_MESSAGE_SIZE = 255;
 
     public static final String BLACKLISTED_KEY_BEGINNING = "blacklisted_access_token: ";
 

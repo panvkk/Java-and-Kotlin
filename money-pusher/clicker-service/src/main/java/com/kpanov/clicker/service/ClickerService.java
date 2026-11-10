@@ -5,8 +5,10 @@ import com.kpanov.clicker.repository.BalanceRepository;
 import com.kpanov.clicker.repository.entity.BalanceEntity;
 import com.kpanov.clicker.util.Messages;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClickerService {
@@ -36,6 +38,16 @@ public class ClickerService {
             String nickname,
             String email
     ) {
+        if(userId == null) {
+            log.error("Dropping user-created event: user id is missing");
+            return;
+        }
+
+        if(email == null || email.isBlank()) {
+            log.error("Dropping user-created event: user id={} has no email", userId);
+            return;
+        }
+
         var newBalance = BalanceEntity.builder()
                 .userId(userId)
                 .userNickname(nickname)
