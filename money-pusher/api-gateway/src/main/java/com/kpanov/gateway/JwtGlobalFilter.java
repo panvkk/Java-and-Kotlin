@@ -66,14 +66,21 @@ public class JwtGlobalFilter implements GlobalFilter {
         if(userEmail == null || !Objects.equals(tokenTypeStr, TokenType.ACCESS.toString())) {
             return onError(exchange, HttpStatus.UNAUTHORIZED);
         }
-        if(!getJwtUtils().isTokenValid(token) || blacklistService.isTokenBlacklisted(token)) {
+        if(!getJwtUtils().isTokenValid(token)) {
             return onError(exchange, HttpStatus.UNAUTHORIZED);
         }
-        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                .header(USERNAME_HEADER, userEmail)
-                .build();
 
-        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+        return blacklistService.isTokenBlacklisted(token)
+                .flatMap(isBlacklisted -> {
+                    if(isBlacklisted) {
+                        return onError(exchange, HttpStatus.UNAUTHORIZED);
+                    }
+                    ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                            .header(USERNAME_HEADER, userEmail)
+                            .build();
+
+                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                });
     }
 
     private Mono<Void> onError(ServerWebExchange exchange, HttpStatus status) {
