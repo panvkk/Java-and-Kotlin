@@ -15,21 +15,22 @@ public class Constants {
     public static final String USERNAME_HEADER = "X-User-Name";
 
     public static final List<String> WHITE_LIST_URLS = List.of(
-            "/actuator/**",
             "/",
-            "/index.html",
+            "/actuator/health",
             "/api/v1/auth/**",
-            "/api/v1/leaderboard",
-
-            "/v2/api-docs",
-            "/v3/api-docs",
-            "/v3/api-docs/**",
-
-            "/favicon.ico",
-            "/swagger-resources",
-            "/swagger-resources/**",
-            "/swagger-ui/**",
-            "/swagger-ui.html"
+            "/api/v1/leaderboard"
+//            ,
+//
+//            "/index.html",
+//            "/v2/api-docs",
+//            "/v3/api-docs",
+//            "/v3/api-docs/**",
+//
+//            "/favicon.ico",
+//            "/swagger-resources",
+//            "/swagger-resources/**",
+//            "/swagger-ui/**",
+//            "/swagger-ui.html"
     );
 
     public static final String USER_CREATED_EVENTS = "user_created_events";
