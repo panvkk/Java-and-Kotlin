@@ -43,6 +43,10 @@ public class ClickerService {
             return;
         }
 
+        if(repository.existsById(userId)) {
+            return;
+        }
+
         if(email == null || email.isBlank()) {
             log.error("Dropping user-created event: user id={} has no email", userId);
             return;

@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import static com.kpanov.common.util.Constants.USER_EVENTS;
+import static com.kpanov.common.util.Constants.USER_CREATED_EVENTS;
 
 @Slf4j
 @Service
@@ -15,7 +15,7 @@ import static com.kpanov.common.util.Constants.USER_EVENTS;
 public class UserConsumer {
     private final ClickerService clickerService;
 
-    @KafkaListener(topics = USER_EVENTS)
+    @KafkaListener(topics = USER_CREATED_EVENTS)
     public void handleUserCreated(UserCreatedEvent event) {
         if(event == null) {
             log.error("Dropping empty user-created event");

@@ -32,7 +32,7 @@ public class Constants {
             "/swagger-ui.html"
     );
 
-    public static final String USER_EVENTS = "user_events";
+    public static final String USER_CREATED_EVENTS = "user_created_events";
     public static final String COMPENSATE_DEDUCTION_EVENTS = "compensate_deduction_events";
     public static final String DEDUCTION_FAILED_EVENTS = "deduction_failed_events";
     public static final String DEDUCTION_SUCCESS_EVENTS = "deduction_success_events";
