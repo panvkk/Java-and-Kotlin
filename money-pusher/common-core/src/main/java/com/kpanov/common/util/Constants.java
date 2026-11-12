@@ -6,6 +6,8 @@ public class Constants {
     public static final Integer LEADERBOARD_LENGTH = 10;
     public static final int MIN_JWT_SECRET_SIZE = 44;
 
+    public static final int MIN_USER_PASSWORD_SIZE = 8;
+
     public static final int MAX_TRANSFER_ADDITIONAL_MESSAGE_SIZE = 255;
 
     public static final String BLACKLISTED_KEY_BEGINNING = "blacklisted_access_token: ";
@@ -18,6 +20,7 @@ public class Constants {
             "/",
             "/actuator/health",
             "/api/v1/auth/**",
+            "/api/v1/users/**",
             "/api/v1/leaderboard"
 //            ,
 //

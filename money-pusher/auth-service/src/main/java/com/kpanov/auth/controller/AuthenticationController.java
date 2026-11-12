@@ -5,6 +5,7 @@ import com.kpanov.auth.controller.dto.AuthenticationResponseDto;
 import com.kpanov.auth.controller.dto.RegisterRequestDto;
 import com.kpanov.auth.controller.mapper.ControllerMappers;
 import com.kpanov.auth.service.AuthenticationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,7 +23,7 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponseDto> register(
-            @RequestBody RegisterRequestDto request
+            @Valid @RequestBody RegisterRequestDto request
     ) {
         var responseModel = authenticationService.register(mappers.toModel(request));
         return ResponseEntity.ok(mappers.toDto(responseModel));
@@ -30,7 +31,7 @@ public class AuthenticationController {
 
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponseDto> authenticate(
-            @RequestBody AuthenticationRequestDto request
+            @Valid @RequestBody AuthenticationRequestDto request
     ) {
         var responseModel = authenticationService.login(mappers.toModel(request));
         return ResponseEntity.ok(mappers.toDto(responseModel));
@@ -38,7 +39,7 @@ public class AuthenticationController {
 
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthenticationResponseDto> refreshToken(
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader
+            @Valid @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader
     ) {
         if(authHeader == null || !authHeader.startsWith(AUTH_HEADER_BEGINNING)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

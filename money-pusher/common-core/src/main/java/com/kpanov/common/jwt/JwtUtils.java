@@ -71,13 +71,13 @@ public class JwtUtils {
             return extractAllClaims(token)
                     .getExpiration()
                     .before(now);
-        } catch (ExpiredJwtException e) {
+        } catch (ExpiredJwtException | IllegalArgumentException e) {
             return true;
         }
     }
 
     public boolean isTokenValid(String token) {
-        return !isTokenExpired(token);
+        return !token.isBlank() && !isTokenExpired(token);
     }
 
     private Key getSigningKey() {

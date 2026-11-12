@@ -1,10 +1,12 @@
 package com.kpanov.auth.controller.handler;
 
+import com.kpanov.auth.util.Messages;
 import com.kpanov.common.exception.ValidationException;
 import com.kpanov.common.exception.InvalidJwtException;
 import com.kpanov.common.exception.TokenExpiredException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -67,5 +69,17 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseDto> handleJwtException(DataIntegrityViolationException e) {
+        var error = "Conflict.";
+        var message = Messages.USER_ALREADY_EXISTS;
+        var timestamp = LocalDateTime.now(clock);
+        var response = new ErrorResponseDto(
+                timestamp, error, message
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 }
