@@ -27,6 +27,12 @@ public interface BalanceRepository extends JpaRepository<BalanceEntity, Integer>
     Optional<BalanceEntity> getBalanceWithLock(String email);
 
     @Modifying
+    @Query("UPDATE BalanceEntity b " +
+            "SET b.balance = b.balance + delta " +
+            "WHERE b.userEmail = :email ")
+    void increaseBalance(String email, Long delta);
+
+    @Modifying
     @Query("UPDATE BalanceEntity b SET b.balance = :balance WHERE b.userEmail = :email ")
     void updateBalance(String email, Long balance);
 }

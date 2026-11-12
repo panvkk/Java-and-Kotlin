@@ -4,6 +4,7 @@ import com.kpanov.clicker.exception.BalanceNotFoundException;
 import com.kpanov.clicker.repository.BalanceRepository;
 import com.kpanov.clicker.repository.entity.BalanceEntity;
 import com.kpanov.clicker.util.Messages;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,20 +20,12 @@ public class ClickerService {
                 .getBalance();
     }
 
+    @Transactional
     public void increaseBalance(String userEmail, Long balanceIncrease) {
-        var currentEntity = getBalanceEntity(userEmail);
-
-        var newBalance = currentEntity.getBalance() + balanceIncrease;                                                                                     // newBalance неплохие кроссовки кстати у меня 1906R
-        var newBalanceEntity = BalanceEntity.builder()
-                .userId(currentEntity.getUserId())
-                .balance(newBalance)
-                .userNickname(currentEntity.getUserNickname())
-                .userEmail(currentEntity.getUserEmail())
-                .build();
-
-        repository.save(newBalanceEntity);
+        repository.increaseBalance(userEmail, balanceIncrease);
     }
 
+    @Transactional
     public void createNewUserBalance(
             Integer userId,
             String nickname,
