@@ -5,6 +5,7 @@ import com.kpanov.common.event.transfer.TransferRequestEvent;
 import com.kpanov.common.exception.ValidationException;
 import com.kpanov.transfer.repository.TransferRepository;
 import com.kpanov.transfer.repository.entity.TransferEntity;
+import com.kpanov.transfer.repository.entity.TransferSagaPhase;
 import com.kpanov.transfer.repository.entity.TransferStatus;
 import com.kpanov.transfer.service.kafka.TransferProducer;
 import com.kpanov.transfer.service.model.TransferRequestModel;
@@ -36,6 +37,7 @@ public class TransferService {
                 .additionalMessage(model.additionalMessage())
                 .transferAmount(model.transferAmount())
                 .status(TransferStatus.PENDING)
+                .sagaPhase(TransferSagaPhase.START)
                 .build();
 
         var createdTransfer = repository.save(entity);

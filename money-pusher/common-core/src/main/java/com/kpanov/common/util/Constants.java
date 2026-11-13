@@ -41,6 +41,7 @@ public class Constants {
 
     public static final String USER_CREATED_EVENTS = "user_created_events";
     public static final String COMPENSATE_DEDUCTION_EVENTS = "compensate_deduction_events";
+    public static final String DEPOSIT_REQUEST_EVENTS = "compensate_deduction_events";
     public static final String DEDUCTION_FAILED_EVENTS = "deduction_failed_events";
     public static final String DEDUCTION_SUCCESS_EVENTS = "deduction_success_events";
     public static final String DEPOSIT_FAILED_EVENTS = "deposit_failed_events";

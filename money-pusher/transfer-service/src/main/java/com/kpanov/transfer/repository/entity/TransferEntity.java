@@ -35,6 +35,10 @@ public class TransferEntity {
     @Enumerated(EnumType.STRING)
     private TransferStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "saga_phase")
+    private TransferSagaPhase sagaPhase;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

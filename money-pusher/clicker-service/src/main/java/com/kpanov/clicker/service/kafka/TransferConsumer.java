@@ -3,6 +3,7 @@ package com.kpanov.clicker.service.kafka;
 import com.kpanov.clicker.service.BalanceService;
 import com.kpanov.common.event.transfer.CompensateDeductionEvent;
 import com.kpanov.common.event.transfer.DeductionSuccessEvent;
+import com.kpanov.common.event.transfer.DepositRequestEvent;
 import com.kpanov.common.event.transfer.TransferRequestEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +34,10 @@ public class TransferConsumer {
         );
     }
 
-    @KafkaListener(topics = DEDUCTION_SUCCESS_EVENTS)
-    public void handleDeductionSuccess(DeductionSuccessEvent event) {
+    @KafkaListener(topics = DEPOSIT_REQUEST_EVENTS)
+    public void handleDepositRequest(DepositRequestEvent event) {
         if(event == null || event.metadata() == null) {
-            log.error("Dropping deduction-success event: metadata is missing");
+            log.error("Dropping transfer-request event: metadata is missing");
             return;
         }
 
