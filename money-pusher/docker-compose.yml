@@ -1,14 +1,22 @@
-# Single source of truth for money-pusher infrastructure.
+# Single source of truth for money-pusher: infrastructure + application services.
 #
 # Run from this directory:
 #   cp .env.example .env   # first time only
-#   docker compose up -d
+#   docker compose up -d --build
 #
 # All secrets come from .env (git-ignored). No credentials are stored here.
+#
+# Application containers deliberately do NOT use `env_file: .env`:
+# the values in .env point at localhost (they are meant for running the
+# services on the host). Inside the Docker network the addresses are different
+# (postgres-auth, kafka, redis, ...), so each service gets an explicit
+# `environment:` block. Compose still reads .env for ${VAR} substitution.
 
 name: money-pusher
 
 services:
+  # ----------------------------- infrastructure -----------------------------
+
   postgres-auth:
     image: postgres:16-alpine
     container_name: money-pusher-postgres
@@ -94,9 +102,16 @@ services:
       KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
     volumes:
-      - kafka_data:/tmp/kraft-combined-logs
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      # The CLI ships with cp-kafka; it succeeds only when the broker answers.
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -108,7 +123,117 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     depends_on:
       kafka:
+        condition: service_healthy
+
+  # ------------------------------ application -------------------------------
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: money-pusher-auth
+    environment:
+      AUTH_SERVICE_PORT: 8081
+      AUTH_DB_URL: jdbc:postgresql://postgres-auth:5432/${AUTH_DB_NAME:-money-pusher_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in money-pusher/.env}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in money-pusher/.env}
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-900000}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800000}
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  clicker-service:
+    build:
+      context: .
+      dockerfile: clicker-service/Dockerfile
+    container_name: money-pusher-clicker
+    environment:
+      CLICKER_SERVICE_PORT: 8082
+      CLICKER_DB_URL: jdbc:postgresql://postgres-clicker:5432/${CLICKER_DB_NAME:-clicker-service_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in money-pusher/.env}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      postgres-clicker:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  transfer-service:
+    build:
+      context: .
+      dockerfile: transfer-service/Dockerfile
+    container_name: money-pusher-transfer
+    environment:
+      TRANSFER_SERVICE_PORT: 8083
+      TRANSFER_DB_URL: jdbc:postgresql://postgres-transfer:5432/${TRANSFER_DB_NAME:-transfer-service_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in money-pusher/.env}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      postgres-transfer:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: money-pusher-gateway
+    environment:
+      GATEWAY_PORT: 8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AUTH_SERVICE_URL: http://auth-service:8081
+      CLICKER_SERVICE_URL: http://clicker-service:8082
+      TRANSFER_SERVICE_URL: http://transfer-service:8083
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in money-pusher/.env}
+    ports:
+      # Host port comes from .env; inside the container the port is always 8080.
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-service:
         condition: service_started
+      clicker-service:
+        condition: service_started
+      transfer-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
 volumes:
   postgres_auth_data:

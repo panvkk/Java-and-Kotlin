@@ -66,13 +66,18 @@ public class JwtUtils {
     }
 
     public boolean isTokenExpired(String token) {
-        Date expiration = extractExpiration(token);
-        Date now = Date.from(Instant.now(clock));
-        return expiration.before(now);
+        try {
+            var now = Date.from(Instant.now(clock));
+            return extractAllClaims(token)
+                    .getExpiration()
+                    .before(now);
+        } catch (ExpiredJwtException | IllegalArgumentException e) {
+            return true;
+        }
     }
 
     public boolean isTokenValid(String token) {
-        return !isTokenExpired(token);
+        return !token.isBlank() && !isTokenExpired(token);
     }
 
     private Key getSigningKey() {

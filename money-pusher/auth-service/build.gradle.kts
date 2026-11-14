@@ -11,6 +11,8 @@ repositories {
     mavenCentral()
 }
 
+java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }
+
 dependencies {
     implementation(project(":common-core"))
     implementation(project(":common-servlet"))
@@ -26,6 +28,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     implementation("org.springframework.boot:spring-boot-starter-kafka")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")

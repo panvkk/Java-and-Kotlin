@@ -12,7 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.reactive.function.server.*;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.time.Clock;
@@ -47,10 +49,19 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
         var error = errorNullable != null ? errorNullable : new InternalGatewayError(Messages.INTERNAL_GATEWAY_ERROR);
 
         var status = HttpStatus.INTERNAL_SERVER_ERROR;
-        var message = error.getMessage();
+        var message = Messages.INTERNAL_GATEWAY_ERROR;
+
         if(error instanceof InvalidJwtException || error instanceof TokenExpiredException) {
             status = HttpStatus.UNAUTHORIZED;
+            message = error.getMessage();
+        } else if(error instanceof WebClientResponseException) {
+            status = (HttpStatus) ((WebClientResponseException) error).getStatusCode();
+        } else if(error instanceof ResponseStatusException) {
+            status = (HttpStatus) ((ResponseStatusException) error).getStatusCode();
         }
+
+        // TODO Добавить traceID
+
         var response = new ErrorResponseDto(LocalDateTime.now(clock), error.toString(), message);
 
         return ServerResponse.status(status)

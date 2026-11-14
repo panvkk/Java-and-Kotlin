@@ -14,8 +14,7 @@ public class UserController {
     private final UserService userService;
     private final ControllerMappers mappers;
 
-    /** в будущем должно быть возможным получить профиль юзера без аутентификации,
-     * но пока для теста нужен защищённый эндпоинт */
+
     @GetMapping("/{user_email}")
     public ResponseEntity<UserProfileResponseDto> getUserProfile(
             @PathVariable(value = "user_email") String email

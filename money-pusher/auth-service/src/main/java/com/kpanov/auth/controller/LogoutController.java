@@ -2,6 +2,7 @@ package com.kpanov.auth.controller;
 
 import com.kpanov.auth.controller.dto.LogoutRequestDto;
 import com.kpanov.auth.service.LogoutService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +19,7 @@ public class LogoutController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @RequestHeader(USERNAME_HEADER) String userEmail,
-            @RequestBody LogoutRequestDto dto
+            @Valid @RequestBody LogoutRequestDto dto
     ) {
         logoutService.logout(dto.accessToken(), dto.refreshToken(), userEmail);
         SecurityContextHolder.clearContext();

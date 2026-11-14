@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import static com.kpanov.common.util.Constants.USER_EVENTS;
+import static com.kpanov.common.util.Constants.USER_CREATED_EVENTS;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +19,6 @@ public class UserProducer {
     ) {
         var event = new UserCreatedEvent(userId, nickname, email);
 
-        kafkaTemplate.send(USER_EVENTS, userId, event);
+        kafkaTemplate.send(USER_CREATED_EVENTS, userId, event);
     }
 }

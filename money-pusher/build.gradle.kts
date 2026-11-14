@@ -10,6 +10,8 @@ repositories {
 
 dependencies {  }
 
+java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }
+
 tasks.test {
     useJUnitPlatform()
 }

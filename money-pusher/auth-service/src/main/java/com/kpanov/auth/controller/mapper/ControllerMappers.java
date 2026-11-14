@@ -18,7 +18,7 @@ public class ControllerMappers {
     }
 
     public RegisterRequest toModel(RegisterRequestDto dto) {
-        return new RegisterRequest(dto.nickname(), dto.email(), dto.password(), dto.role());
+        return new RegisterRequest(dto.nickname(), dto.email(), dto.password());
     }
 
     public AuthenticationResponseDto toDto(AuthenticationResponse model) {

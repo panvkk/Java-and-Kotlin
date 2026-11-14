@@ -11,6 +11,8 @@ repositories {
     mavenCentral()
 }
 
+java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }
+
 dependencies {
     implementation(project(":common-core"))
     implementation(project(":common-servlet"))
@@ -23,6 +25,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     implementation("org.springframework.boot:spring-boot-starter-kafka")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

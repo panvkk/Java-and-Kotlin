@@ -1,17 +1,15 @@
 package com.kpanov.auth.repository.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,6 +21,8 @@ public class UserEntity implements UserDetails {
     private String nickname;
     @Column(nullable = false, unique = true)
     private String email;
+
+    @ToString.Exclude
     private String password;
 
     @Enumerated(EnumType.STRING)

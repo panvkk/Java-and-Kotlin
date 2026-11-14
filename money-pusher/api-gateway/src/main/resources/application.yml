@@ -1,7 +1,10 @@
 server:
   port: ${GATEWAY_PORT:8080}
+  shutdown: graceful
 
 spring:
+  jpa:
+    open-in-view: false
   # Local development only: load money-pusher/.env as a properties file.
   # In Docker/CI the same values are provided as real environment variables,
   # so these optional imports simply find nothing and are skipped.
@@ -19,6 +22,9 @@ spring:
 
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 5s
       server:
         webflux:
           routes:
@@ -26,23 +32,45 @@ spring:
               uri: ${AUTH_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/logout/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 5
+                    redis-rate-limiter.burstCapacity: 10
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@ipKeyResolver}"
 
             - id: clicker-service-route
               uri: ${CLICKER_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/v1/clicker/**,/api/v1/leaderboard
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@ipKeyResolver}"
 
             - id: transfer-service-route
               uri: ${TRANSFER_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/v1/transfers/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 5
+                    redis-rate-limiter.burstCapacity: 10
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@ipKeyResolver}"
 
 application:
   security:
     jwt:
       secret-key: ${JWT_SECRET}
 
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.web.reactive: DEBUG
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

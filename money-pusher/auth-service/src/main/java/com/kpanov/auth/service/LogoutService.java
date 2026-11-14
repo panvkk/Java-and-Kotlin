@@ -29,7 +29,7 @@ public class LogoutService {
             String refreshToken,
             String userEmail
     ) {
-        validateRefreshToken(refreshToken);
+        validateRefreshToken(refreshToken, userEmail);
 
         validateAccessToken(accessToken, userEmail);
 
@@ -39,8 +39,12 @@ public class LogoutService {
         tokenService.deleteToken(refreshToken);
     }
 
-    private void validateRefreshToken(String refreshToken) {
+    private void validateRefreshToken(String refreshToken, String userEmail) {
         if(!tokenService.isTokenExists(refreshToken)) {
+            throw new BadCredentialsException(Messages.INVALID_REFRESH_TOKEN);
+        }
+        var tokenEmail = getJwtUtils().extractUsername(refreshToken);
+        if(!Objects.equals(tokenEmail, userEmail)) {
             throw new BadCredentialsException(Messages.INVALID_REFRESH_TOKEN);
         }
     }
@@ -50,7 +54,7 @@ public class LogoutService {
             throw new BadCredentialsException(Messages.INVALID_ACCESS_TOKEN);
         }
         var tokenEmail = getJwtUtils().extractUsername(accessToken);
-        if(!getJwtUtils().isTokenExpired(accessToken) || !Objects.equals(tokenEmail, userEmail)) {
+        if(!getJwtUtils().isTokenValid(accessToken) || !Objects.equals(tokenEmail, userEmail)) {
             throw new BadCredentialsException(Messages.INVALID_ACCESS_TOKEN);
         }
     }

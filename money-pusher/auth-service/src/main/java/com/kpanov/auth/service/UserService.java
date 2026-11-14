@@ -3,8 +3,8 @@ package com.kpanov.auth.service;
 import com.kpanov.auth.repository.UserRepository;
 import com.kpanov.auth.repository.entity.UserEntity;
 import com.kpanov.auth.util.Messages;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,7 +22,7 @@ public class UserService {
 
     public UserEntity getUserByEmail(String email) {
         return userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new BadCredentialsException(
                         Messages.USER_NOT_FOUND_BY_EMAIL.formatted(email))
                 );
     }

@@ -1,5 +1,6 @@
 package com.kpanov.transfer.repository.entity;
 
+import com.kpanov.common.model.TransferSagaPhase;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +35,10 @@ public class TransferEntity {
 
     @Enumerated(EnumType.STRING)
     private TransferStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "saga_phase")
+    private TransferSagaPhase sagaPhase;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -1,6 +1,6 @@
 package com.kpanov.auth.service;
 
-import com.kpanov.auth.exception.ValidationException;
+import com.kpanov.common.exception.ValidationException;
 import com.kpanov.auth.repository.entity.Role;
 import com.kpanov.auth.repository.entity.UserEntity;
 import com.kpanov.auth.service.kafka.UserProducer;
