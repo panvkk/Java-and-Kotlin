@@ -1,20 +1,29 @@
 package com.kpanov.clicker.service;
 
 import com.kpanov.clicker.repository.BalanceRepository;
-import com.kpanov.clicker.repository.entity.BalanceEntity;
+import com.kpanov.clicker.repository.LedgerRepository;
 import com.kpanov.clicker.service.kafka.TransferProducer;
 import com.kpanov.common.event.transfer.*;
+import com.kpanov.common.model.TransferSagaPhase;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.Instant;
+
+import static com.kpanov.clicker.util.Messages.DEPOSIT_WITHOUT_DEDUCT;
+import static com.kpanov.clicker.util.Messages.PROCESSED_SAGA_PHASE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BalanceService {
-    private final BalanceRepository repository;
+    private final BalanceRepository balanceRepository;
     private final TransferProducer transferProducer;
+    private final LedgerRepository ledgerRepository;
+    private final Clock clock;
 
     @Transactional
     public void deductMoney(
@@ -29,14 +38,20 @@ public class BalanceService {
             return;
         }
 
-        var initiatorBalance = repository.getBalanceWithLock(initiatorEmail);
+        var insertedRows = insertPhaseIfAbsent(transferId, TransferSagaPhase.DEDUCT, initiatorEmail, targetEmail, transferAmount);
+        if(insertedRows == 0) {
+            log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.DEDUCT.toString(), transferId));
+            return;
+        }
+
+        var initiatorBalance = balanceRepository.getBalanceWithLock(initiatorEmail);
 
         if(initiatorBalance.isPresent()) {
             var entity = initiatorBalance.get();
             var balanceRemain = entity.getBalance() - transferAmount;
 
             if(balanceRemain >= 0) {
-                repository.updateBalance(initiatorEmail, balanceRemain);
+                balanceRepository.updateBalance(initiatorEmail, balanceRemain);
 
                 transferProducer.publishDeductionSuccess(
                         new DeductionSuccessEvent(
@@ -65,7 +80,9 @@ public class BalanceService {
 
     @Transactional
     public void compensateDeduction(
+            Long transferId,
             String initiatorEmail,
+            String targetEmail,
             Long transferAmount
     ) {
         if(isBlank(initiatorEmail)) {
@@ -78,13 +95,19 @@ public class BalanceService {
             return;
         }
 
-        var initiatorBalance = repository.getBalanceWithLock(initiatorEmail);
+        var insertedRows = insertPhaseIfAbsent(transferId, TransferSagaPhase.COMPENSATE, initiatorEmail, targetEmail, transferAmount);
+        if(insertedRows == 0) {
+            log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.COMPENSATE.toString(), transferId));
+            return;
+        }
+
+        var initiatorBalance = balanceRepository.getBalanceWithLock(initiatorEmail);
 
         if(initiatorBalance.isPresent()) {
             var entity = initiatorBalance.get();
             var newBalance = entity.getBalance() + transferAmount;
 
-            repository.updateBalance(initiatorEmail, newBalance);
+            balanceRepository.updateBalance(initiatorEmail, newBalance);
         } else {
             // TODO такого и быть не должно быть, но надо обработать как-то хзз
         }
@@ -103,13 +126,30 @@ public class BalanceService {
             return;
         }
 
-        var targetBalance = repository.getBalanceWithLock(targetEmail);
+        var insertedRows = insertPhaseIfAbsent(
+                transferId, TransferSagaPhase.DEPOSIT, initiatorEmail, targetEmail, transferAmount
+        );
+        if(insertedRows == 0) {
+            log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.DEPOSIT.toString(), transferId));
+            return;
+        }
+
+        var deductPhaseExists = ledgerRepository.existsByTransferIdAndPhase(
+                transferId, TransferSagaPhase.DEDUCT
+        );
+        if(!deductPhaseExists) {
+            log.warn(DEPOSIT_WITHOUT_DEDUCT);
+            return;
+        }
+
+
+        var targetBalance = balanceRepository.getBalanceWithLock(targetEmail);
 
         if(targetBalance.isPresent()) {
             var entity = targetBalance.get();
             var newBalance = entity.getBalance() + transferAmount;
 
-            repository.updateBalance(targetEmail, newBalance);
+            balanceRepository.updateBalance(targetEmail, newBalance);
 
             transferProducer.publishDepositSuccess(
                     new DepositSuccessEvent(
@@ -178,6 +218,23 @@ public class BalanceService {
 
         log.warn("Invalid transfer event, publishing deposit-failed: transferId={}", metadata.id());
         transferProducer.publishDepositFailed(new DepositFailedEvent(metadata), metadata.id());
+    }
+
+    private int insertPhaseIfAbsent(
+            Long transferId,
+            TransferSagaPhase phase,
+            String initiatorEmail,
+            String targetEmail,
+            Long transferAmount
+    ) {
+        return ledgerRepository.insertPhaseIfAbsent(
+                transferId,
+                phase.name(),
+                initiatorEmail,
+                targetEmail,
+                transferAmount,
+                Instant.now(clock)
+        );
     }
 
     private static boolean isBlank(String value) {

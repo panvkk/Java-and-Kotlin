@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.Instant;
+
 import static com.kpanov.clicker.util.Messages.PROCESSED_SAGA_PHASE;
 import static com.kpanov.common.util.Constants.*;
 
@@ -18,23 +21,14 @@ import static com.kpanov.common.util.Constants.*;
 @RequiredArgsConstructor
 public class TransferConsumer {
     private final BalanceService balanceService;
-    private final LedgerRepository ledgerRepository;
 
-    @Transactional
     @KafkaListener(topics = TRANSFER_REQUEST_EVENTS)
     public void handleTransferRequest(TransferRequestEvent event) {
         if(event == null || event.metadata() == null) {
             log.error("Dropping transfer-request event: metadata is missing");
             return;
         }
-
         var metadata = event.metadata();
-
-        var insertedRows = insertPhaseIfAbsent(metadata, TransferSagaPhase.DEDUCT);
-        if(insertedRows == 0) {
-            log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.DEDUCT.toString(), metadata.id()));
-            return;
-        }
 
         balanceService.deductMoney(
                 metadata.id(),
@@ -53,12 +47,6 @@ public class TransferConsumer {
 
         var metadata = event.metadata();
 
-        var insertedRows = insertPhaseIfAbsent(metadata, TransferSagaPhase.DEPOSIT);
-        if(insertedRows == 0) {
-            log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.DEPOSIT.toString(), metadata.id()));
-            return;
-        }
-
         balanceService.depositMoney(
                 metadata.id(),
                 metadata.initiatorEmail(),
@@ -73,25 +61,8 @@ public class TransferConsumer {
             log.error("Dropping compensate-deduction event: metadata is missing");
             return;
         }
-
         var metadata = event.metadata();
 
-        var insertedRows = insertPhaseIfAbsent(metadata, TransferSagaPhase.COMPENSATE);
-        if(insertedRows == 0) {
-            log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.COMPENSATE.toString(), metadata.id()));
-            return;
-        }
-
-        balanceService.compensateDeduction(metadata.initiatorEmail(), metadata.transferAmount());
-    }
-
-    private int insertPhaseIfAbsent(TransferMetadata metadata, TransferSagaPhase phase) {
-        return ledgerRepository.insertPhaseIfAbsent(
-                metadata.id(),
-                phase,
-                metadata.initiatorEmail(),
-                metadata.targetEmail(),
-                metadata.transferAmount()
-        );
+        balanceService.compensateDeduction(metadata.id(), metadata.initiatorEmail(), metadata.targetEmail(), metadata.transferAmount());
     }
 }

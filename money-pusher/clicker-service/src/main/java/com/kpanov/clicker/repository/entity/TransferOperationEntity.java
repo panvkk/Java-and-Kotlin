@@ -19,7 +19,7 @@ import java.time.Instant;
                 name = "transfer_phase", columnNames = { "transfer_id", "phase"})
 )
 public class TransferOperationEntity {
-    @Id @GeneratedValue
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "transfer_id")
@@ -30,6 +30,9 @@ public class TransferOperationEntity {
 
     @Column(name = "initiator_email")
     private String initiatorEmail;
+
+    @Column(name = "target_email")
+    private String targetEmail;
 
     @Column(name = "transfer_amount")
     private Long transferAmount;
