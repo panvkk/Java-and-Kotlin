@@ -10,6 +10,8 @@ repositories {
     mavenCentral()
 }
 
+java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }
+
 dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.11.5") // заменить на api(), чтобы не дублировать зависимости
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")

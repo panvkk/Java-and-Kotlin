@@ -22,13 +22,6 @@ public interface OutboxRepository extends JpaRepository<OutboxEntity, Long> {
     int markPublished(@Param("id") Long id, @Param("now") Instant now);
 
     @Modifying
-    @Query(value =
-            "UPDATE OutboxEntity o SET " +
-            "o.lastError = :error " +
-            "WHERE o.id = :id ")
-    int markFailed(@Param("id") Long id, @Param("error") String error);
-
-    @Modifying
     @Query("DELETE FROM OutboxEntity o " +
             "WHERE o.publishedAt IS NOT NULL AND o.publishedAt < :before")
     int deletePublishedBefore(@Param("before") Instant before);

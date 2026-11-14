@@ -11,6 +11,8 @@ repositories {
     mavenCentral()
 }
 
+java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }
+
 dependencies {
     implementation(project(":common-core"))
     implementation(project(":common-servlet"))
@@ -18,12 +20,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 
     runtimeOnly("org.postgresql:postgresql")
 
     implementation("org.springframework.boot:spring-boot-starter-kafka")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

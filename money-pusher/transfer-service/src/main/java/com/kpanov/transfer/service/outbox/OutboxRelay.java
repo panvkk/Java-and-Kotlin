@@ -43,13 +43,9 @@ public class OutboxRelay {
                 Thread.currentThread().interrupt();
                 return;
             } catch (Exception e) {
-                repository.markFailed(row.getId(), truncate(e.getMessage()));
+                log.error(e.getMessage());
             }
         }
-    }
-
-    private String truncate(String value) {
-        return value == null ? null : value.substring(0, Math.min(value.length(), 1000));
     }
 
     @Scheduled(cron = "0 0 3 * * *")

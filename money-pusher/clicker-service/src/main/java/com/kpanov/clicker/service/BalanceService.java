@@ -95,6 +95,12 @@ public class BalanceService {
             return;
         }
 
+        var deductPhaseExists = ledgerRepository.existsByTransferIdAndPhase(transferId, TransferSagaPhase.DEDUCT);
+        if(!deductPhaseExists) {
+            log.warn(DEPOSIT_WITHOUT_DEDUCT);
+            return;
+        }
+
         var insertedRows = insertPhaseIfAbsent(transferId, TransferSagaPhase.COMPENSATE, initiatorEmail, targetEmail, transferAmount);
         if(insertedRows == 0) {
             log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.COMPENSATE.toString(), transferId));
@@ -134,9 +140,7 @@ public class BalanceService {
             return;
         }
 
-        var insertedRows = insertPhaseIfAbsent(
-                transferId, TransferSagaPhase.DEPOSIT, initiatorEmail, targetEmail, transferAmount
-        );
+        var insertedRows = insertPhaseIfAbsent(transferId, TransferSagaPhase.DEPOSIT, initiatorEmail, targetEmail, transferAmount);
         if(insertedRows == 0) {
             log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.DEPOSIT.toString(), transferId));
             return;

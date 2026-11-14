@@ -13,9 +13,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "outbox_table", indexes = {
-        @Index(name = "idx_outbox_poll", columnList = "next_attempt_at, id")
-})
+@Table(name = "outbox_table")
 public class OutboxEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

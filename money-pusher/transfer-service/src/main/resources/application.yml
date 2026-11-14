@@ -1,5 +1,6 @@
 server:
   port: ${TRANSFER_SERVICE_PORT:8083}
+  shutdown: graceful
 
 outbox:
   relay-interval-ms: 1000
@@ -36,7 +37,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,5 +1,6 @@
 server:
   port: ${GATEWAY_PORT:8080}
+  shutdown: graceful
 
 spring:
   jpa:
@@ -67,3 +68,9 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
