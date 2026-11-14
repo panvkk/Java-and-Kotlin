@@ -269,7 +269,9 @@ services:
       api-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      # 127.0.0.1, not localhost: inside the container "localhost" can resolve
+      # to ::1 first, while nginx listens on IPv4 only -> false "unhealthy".
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 15s
       timeout: 5s
       retries: 5
