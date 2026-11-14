@@ -1,0 +1,622 @@
+openapi: 3.0.3
+
+info:
+  title: Money Pusher API
+  version: 1.0.0
+  description: |
+    Публичный HTTP API проекта Money Pusher. Все запросы идут через `api-gateway`
+    (`http://localhost:8080`).
+
+    ## Аутентификация
+    - `POST /api/v1/auth/register` и `POST /api/v1/auth/authenticate` возвращают
+      `access_token` (≈15 минут) и `refresh_token` (≈7 дней).
+    - Защищённые запросы: `Authorization: Bearer <access_token>`.
+    - Обновление: `POST /api/v1/auth/refresh-token` с
+      `Authorization: Bearer <refresh_token>` (тела нет).
+    - Refresh-токен одноразовый: при обновлении возвращается новая пара, старый refresh
+      становится недействительным. Не делайте параллельных refresh.
+    - `POST /api/v1/logout` требует access token в заголовке и оба токена в теле.
+
+    ## Деньги и время
+    - Все суммы — целые числа (`int64`), единица — coin.
+    - `created_at` у переводов — ISO-8601 UTC.
+    - `timestamp` в ошибках — локальное время сервера без таймзоны.
+
+    ## Асинхронность
+    - `POST /api/v1/transfers` возвращает `202` и `status: PENDING`.
+      Итоговый статус (`SUCCESS` / `FAILED`) появляется позже в `GET /api/v1/transfers`.
+    - После регистрации баланс создаётся асинхронно (Kafka), поэтому первый
+      `GET /api/v1/clicker/balance/{user_email}` может вернуть `400`. Нужен retry.
+
+    ## Ограничения
+    - Rate limit на IP: auth 5 req/s (burst 10), clicker 10 req/s (burst 20),
+      transfers 5 req/s (burst 10). При превышении — `429`.
+    - CORS разрешён только для `http://localhost:5500` и `http://127.0.0.1:5500`.
+    - Пагинации в истории переводов нет.
+    - Идемпотентности `POST /transfers` нет: повтор создаёт новый перевод.
+  contact:
+    name: Money Pusher backend team
+
+servers:
+  - url: http://localhost:8080
+    description: Локальный api-gateway
+
+tags:
+  - name: Auth
+    description: Регистрация, вход, обновление токенов и выход
+  - name: Users
+    description: Профили пользователей
+  - name: Clicker
+    description: Клики и баланс
+  - name: Leaderboard
+    description: Таблица лидеров
+  - name: Transfers
+    description: Переводы coins между пользователями
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация
+      description: |
+        Создаёт пользователя и сразу возвращает пару токенов.
+        Роль всегда `USER`; поле `role` не поддерживается.
+        После регистрации баланс создаётся асинхронно.
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              nickname: demo
+              email: demo@example.com
+              password: password123
+      responses:
+        '200':
+          description: Пользователь создан, токены выданы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email уже занят (гонка при одновременной регистрации)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/auth/authenticate:
+    post:
+      tags: [Auth]
+      summary: Вход
+      description: Аутентификация по email и паролю.
+      operationId: authenticate
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationRequest'
+            example:
+              email: demo@example.com
+              password: password123
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Неверный email или пароль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/auth/refresh-token:
+    post:
+      tags: [Auth]
+      summary: Обновление пары токенов
+      description: |
+        В заголовке `Authorization` передаётся **refresh token**.
+        Старый refresh token сразу инвалидируется (ротация).
+        Тело запроса отсутствует.
+      operationId: refreshToken
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Новая пара токенов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          description: |
+            Refresh token отсутствует, невалиден, истёк, уже использован или удалён.
+            При отсутствии заголовка тело может быть пустым.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/logout:
+    post:
+      tags: [Auth]
+      summary: Выход
+      description: |
+        Access token добавляется в blacklist, refresh token удаляется.
+        Требует access token в заголовке и оба токена в теле.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Сессия завершена (пустое тело)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Невалидный access/refresh token или токены принадлежат разным пользователям
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/users/{user_email}:
+    get:
+      tags: [Users]
+      summary: Профиль пользователя
+      description: |
+        Публичный эндпоинт. Если пользователь не найден, возвращается **401**, а не 404.
+        Обновления профиля в API нет.
+      operationId: getUserProfile
+      security: []
+      parameters:
+        - name: user_email
+          in: path
+          required: true
+          description: Email пользователя
+          schema:
+            type: string
+            format: email
+          example: demo@example.com
+      responses:
+        '200':
+          description: Профиль пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Пользователь с таким email не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/clicker:
+    patch:
+      tags: [Clicker]
+      summary: Увеличить баланс
+      description: |
+        Увеличивает баланс текущего пользователя. Пользователь определяется по access token.
+        Контракт: `balance_increase` от 1 до 5; для клика отправляйте `1`.
+        Текущая реализация не валидирует диапазон, поэтому ограничение — на клиенте.
+      operationId: increaseBalance
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncreaseBalanceRequest'
+            example:
+              balance_increase: 1
+      responses:
+        '200':
+          description: Баланс обновлён (пустое тело)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/clicker/balance/{user_email}:
+    get:
+      tags: [Clicker]
+      summary: Баланс пользователя
+      description: |
+        Возвращает баланс в coin. Сразу после регистрации запись баланса может ещё не
+        существовать — в этом случае вернётся 400, повторите запрос с backoff.
+      operationId: getBalance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_email
+          in: path
+          required: true
+          description: Email пользователя
+          schema:
+            type: string
+            format: email
+          example: demo@example.com
+      responses:
+        '200':
+          description: Баланс пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '400':
+          description: Баланс для пользователя не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/leaderboard:
+    get:
+      tags: [Leaderboard]
+      summary: Таблица лидеров
+      description: Топ-10 пользователей по балансу (по убыванию). Публичный эндпоинт.
+      operationId: getLeaderboard
+      security: []
+      responses:
+        '200':
+          description: Таблица лидеров
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/transfers:
+    get:
+      tags: [Transfers]
+      summary: История переводов
+      description: |
+        Все переводы текущего пользователя — входящие и исходящие, сортировка по
+        `created_at` DESC. Пагинации нет. Направление определяется клиентом по
+        `initiator_email`.
+      operationId: getTransfers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список переводов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserTransfersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+    post:
+      tags: [Transfers]
+      summary: Создать перевод
+      description: |
+        Создаёт перевод и ставит его в асинхронную обработку (saga через Kafka).
+        Ответ `202` означает «принято», а не «выполнено»: итоговый статус нужно
+        получить через `GET /api/v1/transfers`.
+
+        Наличие получателя и достаточность средств не проверяются синхронно.
+        Перевод самому себе отклоняется с `400`. Идемпотентности нет.
+      operationId: createTransfer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+            example:
+              target_user_email: friend@example.com
+              transfer_amount: 10
+              additional_message: gg
+      responses:
+        '202':
+          description: Перевод принят в обработку
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+              example:
+                transfer_id: 17
+                transfer_amount: 10
+                initiator_email: demo@example.com
+                target_email: friend@example.com
+                additional_message: gg
+                status: PENDING
+                created_at: '2026-11-14T09:15:30.123456Z'
+        '400':
+          description: Невалидное тело или перевод самому себе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Для защищённых эндпоинтов — `access_token`.
+        Для `POST /api/v1/auth/refresh-token` — `refresh_token`.
+
+  responses:
+    BadRequest:
+      description: Ошибка валидации или бизнес-правила
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: |
+        Токен отсутствует, истёк, невалиден, имеет неверный тип или находится в blacklist.
+        Gateway может вернуть 401 с пустым телом.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Превышен rate limit (на IP)
+      headers:
+        X-RateLimit-Replenish-Rate:
+          description: Скорость пополнения (запросов в секунду)
+          schema:
+            type: integer
+        X-RateLimit-Burst-Capacity:
+          description: Размер burst-окна
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: Остаток токенов в текущем окне
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    AuthTokens:
+      type: object
+      required: [access_token, refresh_token]
+      properties:
+        access_token:
+          type: string
+          description: JWT для защищённых запросов, ≈15 минут
+        refresh_token:
+          type: string
+          description: JWT для обновления пары, ≈7 дней, одноразовый
+
+    RegisterRequest:
+      type: object
+      required: [nickname, email, password]
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          example: demo
+        email:
+          type: string
+          format: email
+          example: demo@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: password123
+
+    AuthenticationRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: demo@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: password123
+
+    LogoutRequest:
+      type: object
+      required: [access_token, refresh_token]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
+    UserProfile:
+      type: object
+      required: [nickname, email, role]
+      properties:
+        nickname:
+          type: string
+          example: demo
+        email:
+          type: string
+          format: email
+          example: demo@example.com
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          example: USER
+
+    IncreaseBalanceRequest:
+      type: object
+      required: [balance_increase]
+      properties:
+        balance_increase:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 5
+          description: Для клика отправляйте 1
+          example: 1
+
+    Balance:
+      type: object
+      required: [user_balance]
+      properties:
+        user_balance:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 42
+
+    LeaderboardResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/LeaderboardItem'
+
+    LeaderboardItem:
+      type: object
+      required: [balance, user_nickname, user_email]
+      properties:
+        balance:
+          type: integer
+          format: int64
+          example: 120
+        user_nickname:
+          type: string
+          example: demo
+        user_email:
+          type: string
+          format: email
+          example: demo@example.com
+
+    TransferRequest:
+      type: object
+      required: [target_user_email, transfer_amount]
+      properties:
+        target_user_email:
+          type: string
+          format: email
+          example: friend@example.com
+        transfer_amount:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 10
+        additional_message:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: gg
+
+    Transfer:
+      type: object
+      required:
+        - transfer_id
+        - transfer_amount
+        - initiator_email
+        - target_email
+        - status
+        - created_at
+      properties:
+        transfer_id:
+          type: integer
+          format: int64
+          example: 17
+        transfer_amount:
+          type: integer
+          format: int64
+          example: 10
+        initiator_email:
+          type: string
+          format: email
+          example: demo@example.com
+        target_email:
+          type: string
+          format: email
+          example: friend@example.com
+        additional_message:
+          type: string
+          nullable: true
+          maxLength: 255
+          example: gg
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED]
+          example: PENDING
+        created_at:
+          type: string
+          format: date-time
+          description: ISO-8601 UTC
+          example: '2026-11-14T09:15:30.123456Z'
+
+    UserTransfersResponse:
+      type: object
+      required: [transfers]
+      properties:
+        transfers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transfer'
+
+    ErrorResponse:
+      type: object
+      required: [timestamp, error, message]
+      properties:
+        timestamp:
+          type: string
+          description: Локальное время сервера без таймзоны
+          example: '2026-11-14T12:34:56.789'
+        error:
+          type: string
+          example: Bad request.
+        message:
+          type: string
+          example: User cannot transfer to himself.
