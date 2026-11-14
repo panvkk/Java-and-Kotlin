@@ -37,7 +37,7 @@ public class TransferService {
                 .additionalMessage(model.additionalMessage())
                 .transferAmount(model.transferAmount())
                 .status(TransferStatus.PENDING)
-                .sagaPhase(TransferSagaPhase.START)
+                .sagaPhase(TransferSagaPhase.DEDUCT)
                 .build();
 
         var createdTransfer = repository.save(entity);

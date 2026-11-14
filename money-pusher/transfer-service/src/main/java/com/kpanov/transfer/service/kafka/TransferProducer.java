@@ -21,7 +21,6 @@ public class TransferProducer {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final TransferRepository transferRepository;
 
-    @Transactional
     public void publishTransferRequest(TransferRequestEvent event, Long id) {
         kafkaTemplate.send(TRANSFER_REQUEST_EVENTS, id.toString(), event);
     }
