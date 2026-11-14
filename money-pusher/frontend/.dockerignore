@@ -1,0 +1,20 @@
+# Keep the Docker build context small and never send local env/secrets to the
+# daemon. VITE_API_BASE_URL is passed as a build arg by docker-compose.yml.
+# `.env.production` is intentionally allowed so the manual build flow from
+# frontend/README.md keeps working; it must contain only public VITE_* values.
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.agents
+.copilotignore
+skills-lock.json
+coverage
+*.log
+.vscode
+.idea

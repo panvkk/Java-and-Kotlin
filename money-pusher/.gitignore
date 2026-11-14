@@ -43,5 +43,3 @@ Thumbs.db
 .docker/
 docker-data/
 minikube/
-
-frontend/

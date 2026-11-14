@@ -1,0 +1,92 @@
+# ---------------------------------------------------------------------------
+# Frontend .gitignore
+#
+# Safe to commit: package.json, package-lock.json, source files, configs,
+# Dockerfile, nginx.conf, README.md and api/ (public API docs).
+# Never commit: dependencies, build output, local env files, secrets,
+# certificates, logs and local editor/agent tooling.
+# ---------------------------------------------------------------------------
+README.md
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/
+.yarn/cache/
+
+# Build output and caches
+dist/
+dist-ssr/
+build/
+out/
+.vite/
+.cache/
+.parcel-cache/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+vite.config.ts.timestamp-*
+.eslintcache
+.stylelintcache
+
+# Local environment files.
+# VITE_* values are baked into the public bundle, so do not put real secrets
+# in them. Keep only public configuration in .env.example.
+.env
+.env.*
+!.env.example
+*.local
+
+# Secrets, keys and certificates (never publish)
+secrets.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+*.csr
+id_rsa
+id_ed25519
+.htpasswd
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local Docker/Compose overrides
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Editors and IDEs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Local AI-agent tooling and third-party skill packs (8+ MB, not part of app)
+.agents/
+.copilotignore
+skills-lock.json
+
+# Temporary files
+*.tmp
+*.bak

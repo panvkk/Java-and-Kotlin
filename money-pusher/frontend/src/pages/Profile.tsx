@@ -1,0 +1,9 @@
+import { FormEvent, useState } from 'react';
+import { Button, Field, Status } from '../components/UI';
+import { saveUser } from '../lib/session';
+import type { User } from '../types';
+export function Profile({ user, onUserChange }: { user: User; onUserChange: (user: User) => void }) {
+  const [nickname, setNickname] = useState(user.nickname); const [saved, setSaved] = useState(false);
+  const submit = (event: FormEvent) => { event.preventDefault(); const next = { ...user, nickname: nickname.trim() || user.nickname }; saveUser(next); onUserChange(next); setNickname(next.nickname); setSaved(true); };
+  return <div className="page"><section className="page-intro profile-intro"><div><p className="kicker">личный счёт</p><h1>Твой<br /><span>профиль.</span></h1><p>Никнейм можно менять локально — email и роль принадлежат системе.</p></div><div className="profile-avatar">{user.nickname.slice(0, 1).toUpperCase()}</div></section><section className="profile-grid"><div className="panel profile-card"><div className="panel-head"><div><h2>Данные игрока</h2><p>Синхронизировано с gateway</p></div><span className="role-tag">{user.role}</span></div><form className="profile-form" onSubmit={submit}><Field label="Никнейм"><input value={nickname} onChange={(e) => { setNickname(e.target.value); setSaved(false); }} minLength={2} required /></Field><div className="readonly-row"><span>Email</span><strong>{user.email}</strong></div><div className="readonly-row"><span>Роль</span><strong>{user.role}</strong></div><Button type="submit">Сохранить изменения</Button>{saved && <Status tone="success">Профиль обновлён.</Status>}</form></div><aside className="panel account-card"><p className="kicker">статус счёта</p><div className="account-number">AC / 001</div><div className="account-rule" /><p>Асфальтовый счёт активен. Все игровые операции проходят только через авторизованный gateway.</p><span className="live-tag">active</span></aside></section></div>;
+}
