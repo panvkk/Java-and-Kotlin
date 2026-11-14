@@ -9,6 +9,7 @@ import com.kpanov.common.model.TransferSagaPhase;
 import com.kpanov.transfer.repository.entity.TransferStatus;
 import com.kpanov.transfer.service.kafka.TransferProducer;
 import com.kpanov.transfer.service.model.TransferRequestModel;
+import com.kpanov.transfer.service.outbox.OutboxService;
 import com.kpanov.transfer.util.Messages;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,7 @@ public class TransferService {
                         createdTransfer.getTransferAmount()
                 )
         );
+
         transferProducer.publishTransferRequest(event, createdTransfer.getId());
         return createdTransfer;
     }

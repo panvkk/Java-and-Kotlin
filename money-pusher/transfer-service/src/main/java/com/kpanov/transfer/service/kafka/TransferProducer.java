@@ -3,10 +3,9 @@ package com.kpanov.transfer.service.kafka;
 import com.kpanov.common.event.transfer.CompensateDeductionEvent;
 import com.kpanov.common.event.transfer.DepositRequestEvent;
 import com.kpanov.common.event.transfer.TransferRequestEvent;
-import com.kpanov.transfer.repository.TransferRepository;
+import com.kpanov.transfer.service.outbox.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import static com.kpanov.common.util.Constants.*;
@@ -15,18 +14,17 @@ import static com.kpanov.common.util.Constants.*;
 @Service
 @RequiredArgsConstructor
 public class TransferProducer {
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final TransferRepository transferRepository;
+    private final OutboxService outboxService;
 
     public void publishTransferRequest(TransferRequestEvent event, Long id) {
-        kafkaTemplate.send(TRANSFER_REQUEST_EVENTS, id.toString(), event);
+        outboxService.enqueue(TRANSFER_REQUEST_EVENTS, id.toString(), event);
     }
 
     public void publishDepositRequest(DepositRequestEvent event, Long id) {
-        kafkaTemplate.send(DEPOSIT_REQUEST_EVENTS, id.toString(), event);
+        outboxService.enqueue(DEPOSIT_REQUEST_EVENTS, id.toString(), event);
     }
 
     public void publishCompensateDeduction(CompensateDeductionEvent event, Long id) {
-        kafkaTemplate.send(COMPENSATE_DEDUCTION_EVENTS, id.toString(), event);
+        outboxService.enqueue(COMPENSATE_DEDUCTION_EVENTS, id.toString(), event);
     }
 }
