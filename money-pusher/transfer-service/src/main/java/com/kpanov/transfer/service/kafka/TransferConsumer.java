@@ -2,7 +2,7 @@ package com.kpanov.transfer.service.kafka;
 
 import com.kpanov.common.event.transfer.*;
 import com.kpanov.transfer.repository.TransferRepository;
-import com.kpanov.transfer.repository.entity.TransferSagaPhase;
+import com.kpanov.common.model.TransferSagaPhase;
 import com.kpanov.transfer.service.TransferService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -35,11 +35,6 @@ public class TransferConsumer {
         );
         if(updatedRows == 0) {
             log.warn(INVALID_SAGA_PHASE.formatted(metadata.id()));
-
-            transferProducer.publishCompensateDeduction(
-                    new CompensateDeductionEvent(metadata),
-                    metadata.id()
-            );
             return;
         }
 

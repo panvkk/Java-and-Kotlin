@@ -1,7 +1,7 @@
 package com.kpanov.transfer.repository;
 
 import com.kpanov.transfer.repository.entity.TransferEntity;
-import com.kpanov.transfer.repository.entity.TransferSagaPhase;
+import com.kpanov.common.model.TransferSagaPhase;
 import com.kpanov.transfer.repository.entity.TransferStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

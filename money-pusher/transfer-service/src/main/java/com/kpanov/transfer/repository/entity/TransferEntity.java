@@ -1,5 +1,6 @@
 package com.kpanov.transfer.repository.entity;
 
+import com.kpanov.common.model.TransferSagaPhase;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
