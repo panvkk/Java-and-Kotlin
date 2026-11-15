@@ -11,6 +11,7 @@ public class Constants {
     public static final int MAX_TRANSFER_ADDITIONAL_MESSAGE_SIZE = 255;
 
     public static final String UNKNOWN_HOST_ADDRESS = "unknown";
+    public static final String REFRESH_TOKEN_COOKIE = "refresh_token";
 
 
     public static final String BLACKLISTED_KEY_BEGINNING = "blacklisted_access_token: ";

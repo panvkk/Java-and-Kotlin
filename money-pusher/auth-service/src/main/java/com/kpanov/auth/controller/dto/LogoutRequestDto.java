@@ -7,7 +7,5 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public record LogoutRequestDto(
         @JsonProperty("access_token")
-        @NotBlank String accessToken,
-        @JsonProperty("refresh_token")
-        @NotBlank String refreshToken
+        @NotBlank String accessToken
 ) { }

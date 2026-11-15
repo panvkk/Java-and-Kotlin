@@ -22,7 +22,7 @@ public class ControllerMappers {
     }
 
     public AuthenticationResponseDto toDto(AuthenticationResponse model) {
-        return new AuthenticationResponseDto(model.accessToken(), model.refreshToken());
+        return new AuthenticationResponseDto(model.accessToken());
     }
 
     public UserProfileResponseDto toDto(UserEntity entity) {
