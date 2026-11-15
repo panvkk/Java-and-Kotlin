@@ -2,12 +2,12 @@ import type { ApiError, AuthTokens, Balance, LeaderboardItem, Transfer, User } f
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || 'http://localhost:8080';
 const ACCESS_KEY = 'asphalt-clicker-access';
-const REFRESH_KEY = 'asphalt-clicker-refresh';
 localStorage.removeItem('asphalt-clicker-auth');
+localStorage.removeItem('asphalt-clicker-refresh');
+sessionStorage.removeItem('asphalt-clicker-refresh');
 let tokens: AuthTokens | null = (() => {
   const accessToken = sessionStorage.getItem(ACCESS_KEY);
-  const refreshToken = sessionStorage.getItem(REFRESH_KEY);
-  return accessToken && refreshToken ? { access_token: accessToken, refresh_token: refreshToken } : null;
+  return accessToken ? { access_token: accessToken } : null;
 })();
 let refreshFlight: Promise<AuthTokens> | null = null;
 let onSessionExpired: (() => void) | null = null;
@@ -17,14 +17,25 @@ export function getTokens() { return tokens; }
 export function saveTokens(next: AuthTokens) {
   tokens = next;
   sessionStorage.setItem(ACCESS_KEY, next.access_token);
-  sessionStorage.setItem(REFRESH_KEY, next.refresh_token);
 }
 export function clearTokens() {
   tokens = null;
   sessionStorage.removeItem(ACCESS_KEY);
-  sessionStorage.removeItem(REFRESH_KEY);
 }
 export function hasSession() { return Boolean(tokens?.access_token); }
+
+export function getTokenSubject(token = tokens?.access_token): string | null {
+  if (!token) return null;
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    const subject = (JSON.parse(atob(normalized)) as { sub?: unknown }).sub;
+    return typeof subject === 'string' && subject.length > 0 ? subject : null;
+  } catch {
+    return null;
+  }
+}
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 function messageFor(status: number, category?: string) {
@@ -46,10 +57,9 @@ async function parseError(response: Response): Promise<ApiError> {
 
 async function refresh(): Promise<AuthTokens> {
   if (refreshFlight) return refreshFlight;
-  const refreshToken = tokens?.refresh_token;
-  if (!refreshToken) throw new Error('No refresh token');
   refreshFlight = fetch(`${baseUrl}/api/v1/auth/refresh-token`, {
-    method: 'POST', headers: { Authorization: `Bearer ${refreshToken}` },
+    method: 'POST',
+    credentials: 'include',
   }).then(async (response) => {
     if (!response.ok) throw await parseError(response);
     const next = await response.json() as AuthTokens;
@@ -59,12 +69,16 @@ async function refresh(): Promise<AuthTokens> {
   return refreshFlight;
 }
 
+export async function restoreSession(): Promise<AuthTokens> {
+  return refresh();
+}
+
 async function request<T>(path: string, init: RequestInit = {}, canRefresh = true, attempt = 0): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set('Content-Type', 'application/json');
   if (tokens?.access_token) headers.set('Authorization', `Bearer ${tokens.access_token}`);
-  const response = await fetch(`${baseUrl}${path}`, { ...init, headers });
-  if (response.status === 401 && canRefresh && tokens?.refresh_token) {
+  const response = await fetch(`${baseUrl}${path}`, { ...init, headers, credentials: 'include' });
+  if (response.status === 401 && canRefresh && tokens?.access_token) {
     try { await refresh(); return request(path, init, false, attempt); }
     catch { clearTokens(); onSessionExpired?.(); throw new Error('Сессия истекла. Войди снова.'); }
   }
@@ -84,7 +98,20 @@ export const api = {
   transfers: () => request<{ transfers: Transfer[] }>('/api/v1/transfers'),
   createTransfer: (body: { target_user_email: string; transfer_amount: number; additional_message: string }) =>
     request<Transfer>('/api/v1/transfers', { method: 'POST', body: JSON.stringify(body) }),
-  logout: () => request<void>('/api/v1/logout', { method: 'POST', body: JSON.stringify({ access_token: tokens?.access_token || '', refresh_token: tokens?.refresh_token || '' }) }, false),
+  logout: async () => {
+    const sendLogout = () => request<void>('/api/v1/logout', {
+      method: 'POST',
+      body: JSON.stringify({ access_token: tokens?.access_token || '' }),
+    }, false);
+
+    try {
+      return await sendLogout();
+    } catch (error) {
+      if ((error as ApiError).status !== 401 || !tokens?.access_token) throw error;
+      await refresh();
+      return sendLogout();
+    }
+  },
 };
 
 export async function loadBalanceWithRetry(email: string) {

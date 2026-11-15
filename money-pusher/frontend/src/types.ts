@@ -1,4 +1,4 @@
-export type AuthTokens = { access_token: string; refresh_token: string };
+export type AuthTokens = { access_token: string };
 export type User = { nickname: string; email: string; role: 'USER' | 'ADMIN' };
 export type Balance = { user_balance: number };
 export type LeaderboardItem = { balance: number; user_nickname: string; user_email: string };

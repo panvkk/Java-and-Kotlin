@@ -1,8 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Layout, PublicLayout } from './components/Layout';
-import { clearTokens, getTokens, setSessionExpiredHandler } from './lib/api';
-import { getUser } from './lib/session';
+import { clearTokens, getTokenSubject, getTokens, restoreSession, setSessionExpiredHandler, api } from './lib/api';
+import { clearUser, getUser, saveUser } from './lib/session';
 import { Login, Register } from './pages/Auth';
 import { Clicker } from './pages/Clicker';
 import { Leaderboard } from './pages/Leaderboard';
@@ -22,7 +22,44 @@ function Public() {
 }
 
 export default function App() {
-  const [authenticated, setAuthenticated] = useState(() => Boolean(getTokens() && getUser()));
-  useEffect(() => { setSessionExpiredHandler(() => setAuthenticated(false)); }, []);
-  return <BrowserRouter>{authenticated ? <Protected onSignedOut={() => setAuthenticated(false)} /> : <Public />}</BrowserRouter>;
+  const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'public'>(() => (
+    getTokens() && getUser() ? 'authenticated' : 'checking'
+  ));
+  useEffect(() => {
+    let active = true;
+    setSessionExpiredHandler(() => {
+      clearUser();
+      setAuthState('public');
+    });
+
+    if (getTokens() && getUser()) return () => { active = false; };
+
+    restoreSession()
+      .then((next) => {
+        const email = getTokenSubject(next.access_token);
+        if (!email) throw new Error('Access token does not contain a user subject');
+        return api.user(email);
+      })
+      .then((user) => {
+        if (!active) return;
+        saveUser(user);
+        setAuthState('authenticated');
+      })
+      .catch(() => {
+        if (!active) return;
+        clearTokens();
+        clearUser();
+        setAuthState('public');
+      });
+
+    return () => { active = false; };
+  }, []);
+
+  return <BrowserRouter>{
+    authState === 'checking'
+      ? <PublicLayout><p className="status status-info" role="status">Восстанавливаем сессию…</p></PublicLayout>
+      : authState === 'authenticated'
+        ? <Protected onSignedOut={() => setAuthState('public')} />
+        : <Public />
+  }</BrowserRouter>;
 }
