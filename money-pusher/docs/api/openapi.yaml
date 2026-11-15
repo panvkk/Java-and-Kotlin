@@ -2,20 +2,27 @@ openapi: 3.0.3
 
 info:
   title: Money Pusher API
-  version: 1.0.0
+  version: 1.1.0
   description: |
     Публичный HTTP API проекта Money Pusher. Все запросы идут через `api-gateway`
     (`http://localhost:8080`).
 
     ## Аутентификация
     - `POST /api/v1/auth/register` и `POST /api/v1/auth/authenticate` возвращают
-      `access_token` (≈15 минут) и `refresh_token` (≈7 дней).
+      только `access_token` (≈15 минут) в JSON.
+    - Refresh-токен (≈7 дней) приходит в заголовке `Set-Cookie` как `refresh_token`
+      (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/api/v1`). Из JavaScript он
+      недоступен, хранить его в `localStorage`/`sessionStorage` не нужно.
     - Защищённые запросы: `Authorization: Bearer <access_token>`.
-    - Обновление: `POST /api/v1/auth/refresh-token` с
-      `Authorization: Bearer <refresh_token>` (тела нет).
-    - Refresh-токен одноразовый: при обновлении возвращается новая пара, старый refresh
-      становится недействительным. Не делайте параллельных refresh.
-    - `POST /api/v1/logout` требует access token в заголовке и оба токена в теле.
+    - Обновление: `POST /api/v1/auth/refresh-token` без тела и без заголовка
+      `Authorization`. Refresh-токен читается из cookie, поэтому запрос нужно
+      отправлять с `credentials: 'include'` — браузер сам приложит cookie и
+      сохранит новый `Set-Cookie`.
+    - Refresh-токен одноразовый: при обновлении возвращается новый `access_token`
+      и ротированный refresh-cookie, старый refresh становится недействительным.
+      Не делайте параллельных refresh.
+    - `POST /api/v1/logout` требует access token в заголовке и в теле, refresh-токен
+      читается из cookie; успешный ответ очищает cookie.
 
     ## Деньги и время
     - Все суммы — целые числа (`int64`), единица — coin.
@@ -31,7 +38,8 @@ info:
     ## Ограничения
     - Rate limit на IP: auth 5 req/s (burst 10), clicker 10 req/s (burst 20),
       transfers 5 req/s (burst 10). При превышении — `429`.
-    - CORS разрешён только для `http://localhost:5500` и `http://127.0.0.1:5500`.
+    - CORS разрешён для `http://localhost:5500`, `http://127.0.0.1:5500`,
+      `http://localhost:8085`, `http://127.0.0.1:8085` и `https://clicker.asphalt.by`.
     - Пагинации в истории переводов нет.
     - Идемпотентности `POST /transfers` нет: повтор создаёт новый перевод.
   contact:
@@ -40,6 +48,8 @@ info:
 servers:
   - url: http://localhost:8080
     description: Локальный api-gateway
+  - url: https://clicker.asphalt.by
+    description: Production (фронтенд и API на одном origin)
 
 tags:
   - name: Auth
@@ -62,7 +72,7 @@ paths:
       tags: [Auth]
       summary: Регистрация
       description: |
-        Создаёт пользователя и сразу возвращает пару токенов.
+        Создаёт пользователя и сразу выдаёт access token и refresh-cookie.
         Роль всегда `USER`; поле `role` не поддерживается.
         После регистрации баланс создаётся асинхронно.
       operationId: register
@@ -79,7 +89,10 @@ paths:
               password: password123
       responses:
         '200':
-          description: Пользователь создан, токены выданы
+          description: Пользователь создан, access token выдан, refresh-cookie установлена
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/RefreshTokenSetCookie'
           content:
             application/json:
               schema:
@@ -99,7 +112,9 @@ paths:
     post:
       tags: [Auth]
       summary: Вход
-      description: Аутентификация по email и паролю.
+      description: |
+        Аутентификация по email и паролю. В ответе только `access_token`,
+        refresh-токен приходит в `Set-Cookie`.
       operationId: authenticate
       security: []
       requestBody:
@@ -113,7 +128,10 @@ paths:
               password: password123
       responses:
         '200':
-          description: Успешный вход
+          description: Успешный вход, access token выдан, refresh-cookie установлена
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/RefreshTokenSetCookie'
           content:
             application/json:
               schema:
@@ -132,25 +150,34 @@ paths:
   /api/v1/auth/refresh-token:
     post:
       tags: [Auth]
-      summary: Обновление пары токенов
+      summary: Обновление access-токена
       description: |
-        В заголовке `Authorization` передаётся **refresh token**.
-        Старый refresh token сразу инвалидируется (ротация).
-        Тело запроса отсутствует.
+        Тела нет, заголовок `Authorization` не нужен. Refresh-токен читается из
+        cookie `refresh_token`, поэтому запрос нужно отправлять с
+        `credentials: 'include'`, иначе браузер не приложит cookie.
+
+        В ответ приходит новый `access_token` и ротированный `Set-Cookie` с новым
+        refresh-токеном. Старый refresh-токен сразу инвалидируется (ротация),
+        поэтому параллельные refresh приведут к `401`.
       operationId: refreshToken
       security:
-        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RefreshTokenCookie'
       responses:
         '200':
-          description: Новая пара токенов
+          description: Новый access token и ротированная refresh-cookie
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/RefreshTokenSetCookie'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthTokens'
         '401':
           description: |
-            Refresh token отсутствует, невалиден, истёк, уже использован или удалён.
-            При отсутствии заголовка тело может быть пустым.
+            Cookie `refresh_token` отсутствует, невалидна, истекла или уже
+            использована. Если cookie не пришла, тело ответа пустое.
           content:
             application/json:
               schema:
@@ -163,24 +190,38 @@ paths:
       tags: [Auth]
       summary: Выход
       description: |
-        Access token добавляется в blacklist, refresh token удаляется.
-        Требует access token в заголовке и оба токена в теле.
+        Access token добавляется в blacklist, refresh token удаляется на сервере,
+        cookie `refresh_token` очищается в ответе (`Max-Age=0`).
+
+        Требует access token в заголовке `Authorization` и в теле запроса:
+        gateway по заголовку определяет пользователя и передаёт `X-User-Name`.
+        Refresh-токен читается из cookie, передавать его в теле не нужно.
       operationId: logout
       security:
         - bearerAuth: []
+          cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RefreshTokenCookie'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LogoutRequest'
+            example:
+              access_token: eyJhbGciOiJIUzI1NiJ9...
       responses:
         '200':
-          description: Сессия завершена (пустое тело)
+          description: Сессия завершена, refresh-cookie очищена (пустое тело)
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/RefreshTokenClearCookie'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Cookie `refresh_token` отсутствует в запросе
         '401':
-          description: Невалидный access/refresh token или токены принадлежат разным пользователям
+          description: |
+            Невалидный или истёкший access/refresh token либо токены принадлежат
+            разным пользователям.
           content:
             application/json:
               schema:
@@ -382,8 +423,44 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        Для защищённых эндпоинтов — `access_token`.
-        Для `POST /api/v1/auth/refresh-token` — `refresh_token`.
+        Access token для защищённых эндпоинтов: `Authorization: Bearer <access_token>`.
+        Refresh-токен в этом заголовке больше не принимается.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+      description: |
+        Refresh-токен в HttpOnly cookie `refresh_token`
+        (`Secure`, `SameSite=Lax`, `Path=/api/v1`).
+        Cookie устанавливается на `register`, `authenticate` и `refresh-token`
+        и очищается на `logout`. Из JavaScript недоступна.
+
+  parameters:
+    RefreshTokenCookie:
+      name: refresh_token
+      in: cookie
+      required: false
+      description: |
+        Refresh-токен, который браузер отправляет автоматически.
+        Для `refresh-token` фактически обязателен: без него вернётся `401`.
+        Для `logout` без него вернётся `400`.
+      schema:
+        type: string
+
+  headers:
+    RefreshTokenSetCookie:
+      description: |
+        Новый refresh-токен. Формат:
+        `refresh_token=<jwt>; Path=/api/v1; Max-Age=<refreshTokenExpiration/1000>;
+        HttpOnly; Secure; SameSite=Lax`.
+      schema:
+        type: string
+    RefreshTokenClearCookie:
+      description: |
+        Очищает refresh-cookie: `refresh_token=; Path=/api/v1; Max-Age=0;
+        HttpOnly; Secure; SameSite=Lax`.
+      schema:
+        type: string
 
   responses:
     BadRequest:
@@ -423,14 +500,13 @@ components:
   schemas:
     AuthTokens:
       type: object
-      required: [access_token, refresh_token]
+      required: [access_token]
       properties:
         access_token:
           type: string
-          description: JWT для защищённых запросов, ≈15 минут
-        refresh_token:
-          type: string
-          description: JWT для обновления пары, ≈7 дней, одноразовый
+          description: |
+            JWT для защищённых запросов, ≈15 минут.
+            Refresh-токен в теле не возвращается — он приходит в `Set-Cookie`.
 
     RegisterRequest:
       type: object
@@ -466,12 +542,14 @@ components:
 
     LogoutRequest:
       type: object
-      required: [access_token, refresh_token]
+      required: [access_token]
       properties:
         access_token:
           type: string
-        refresh_token:
-          type: string
+          description: |
+            Действующий access token. Должен совпадать с токеном в заголовке
+            `Authorization: Bearer`.
+            Refresh-токен передавать не нужно — он читается из cookie.
 
     UserProfile:
       type: object

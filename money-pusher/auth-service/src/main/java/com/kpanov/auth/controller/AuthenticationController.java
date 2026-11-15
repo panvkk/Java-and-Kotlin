@@ -14,6 +14,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+
 import static com.kpanov.common.util.Constants.REFRESH_TOKEN_COOKIE;
 
 @RestController
@@ -58,7 +60,7 @@ public class AuthenticationController {
         var refreshCookie = getRefreshTokenCookie(response.refreshToken());
 
         return ResponseEntity.ok()
-                .header(REFRESH_TOKEN_COOKIE, refreshCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(mappers.toDto(response));
     }
 
@@ -66,9 +68,9 @@ public class AuthenticationController {
         return ResponseCookie.from(REFRESH_TOKEN_COOKIE, refreshToken)
                 .httpOnly(true)
                 .secure(true)
-                .maxAge(jwtProperties.refreshTokenExpiration())
+                .maxAge(Duration.ofMillis(jwtProperties.refreshTokenExpiration()))
                 .sameSite("Lax")
-                .path("/api/v1/auth")
+                .path("/api/v1")
                 .build();
     }
 }

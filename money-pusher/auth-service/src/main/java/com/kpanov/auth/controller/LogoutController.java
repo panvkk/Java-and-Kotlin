@@ -40,7 +40,7 @@ public class LogoutController {
                 .secure(true)
                 .maxAge(Duration.ZERO)
                 .sameSite("Lax")
-                .path("/api/v1/auth")
+                .path("/api/v1")
                 .build();
 
         return ResponseEntity.ok()

@@ -3,8 +3,10 @@
 Документ для команды фронтенда. Описывает публичный HTTP API, доступный через `api-gateway`.
 
 - **Base URL (локально):** `http://localhost:8080`
+- **Base URL (production):** `https://clicker.asphalt.by` — фронт и API на одном origin
 - **Формат:** JSON, `Content-Type: application/json`
-- **Авторизация:** `Authorization: Bearer <access_token>`
+- **Авторизация:** `Authorization: Bearer <access_token>`; refresh-токен — только в
+  HttpOnly cookie `refresh_token` (из JavaScript недоступен)
 - **Деньги:** целые числа (`Long`), единица — «coin». Дробных значений нет.
 - **Машиночитаемая спека:** [`openapi.yaml`](./openapi.yaml) — импортируется в Postman
   (Import → File), Swagger Editor или Redoc.
@@ -38,9 +40,10 @@
 
 ```bash
 BASE=http://localhost:8080
+JAR=cookies.txt   # для локального curl: refresh-токен живёт в cookie
 
-# 1. Регистрация (сразу возвращает токены)
-curl -s -X POST "$BASE/api/v1/auth/register" \
+# 1. Регистрация: access_token в JSON, refresh-токен — в Set-Cookie
+curl -s -c "$JAR" -X POST "$BASE/api/v1/auth/register" \
   -H "Content-Type: application/json" \
   -d '{"nickname":"demo","email":"demo@example.com","password":"password123"}'
 
@@ -66,7 +69,19 @@ curl -s -X POST "$BASE/api/v1/transfers" \
 # 6. История переводов / статусы
 curl -s "$BASE/api/v1/transfers" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# 7. Обновление access_token: без тела и без Authorization, только cookie
+curl -s -b "$JAR" -c "$JAR" -X POST "$BASE/api/v1/auth/refresh-token"
+
+# 8. Logout: access_token в заголовке и в теле, refresh-токен — из cookie
+curl -s -b "$JAR" -c "$JAR" -X POST "$BASE/api/v1/logout" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -d "{\"access_token\":\"$ACCESS_TOKEN\"}"
 ```
+
+В браузере вместо `-c/-b` используется `credentials: 'include'` во всех `fetch`
+(см. раздел [Аутентификация](#аутентификация)).
 
 ---
 
@@ -83,6 +98,8 @@ curl -s "$BASE/api/v1/transfers" \
 | Пустой успешный ответ | тело отсутствует (HTTP 200) |
 | Создание перевода | HTTP 202 + тело с `status: "PENDING"` |
 | Регистрация/логин | HTTP 200 (не 201) |
+| Refresh-токен | HttpOnly cookie `refresh_token`, приходит в `Set-Cookie` |
+| Cookie-запросы | `credentials: 'include'` обязателен (`/refresh-token`, `/logout`, login/register) |
 
 Все защищённые эндпоинты требуют **access token**. Gateway сам проверяет подпись, срок жизни,
 тип токена (`ACCESS`) и blacklist, после чего прокидывает email пользователя во внутренний
@@ -94,34 +111,56 @@ curl -s "$BASE/api/v1/transfers" \
 
 ### Схема
 
-1. `POST /api/v1/auth/register` или `POST /api/v1/auth/authenticate` → пара токенов.
+1. `POST /api/v1/auth/register` или `POST /api/v1/auth/authenticate` возвращают
+   `access_token` в JSON и устанавливают refresh-cookie через `Set-Cookie`.
 2. `access_token` передаётся в `Authorization: Bearer ...` для защищённых запросов.
-3. `access_token` живёт **15 минут** по умолчанию, `refresh_token` — **7 дней**.
-4. Перед истечением access token обменяйте refresh token на новую пару через
-   `POST /api/v1/auth/refresh-token`.
-5. При logout отправьте оба токена: access попадёт в blacklist, refresh будет удалён.
+3. `access_token` живёт **15 минут** по умолчанию, refresh-токен — **7 дней**.
+4. Перед истечением access token обменяйте refresh-cookie на новый access token через
+   `POST /api/v1/auth/refresh-token` (тела и заголовка `Authorization` нет).
+5. При logout access token уходит в blacklist, refresh-токен удаляется на сервере,
+   cookie очищается в ответе.
+
+### Cookie
+
+Refresh-токен живёт только в cookie и недоступен из JavaScript:
+
+```http
+Set-Cookie: refresh_token=<jwt>; Path=/api/v1; Max-Age=<refreshTokenExpiration/1000>; HttpOnly; Secure; SameSite=Lax
+```
+
+- `HttpOnly` — `document.cookie` его не видит; хранить токен в `localStorage` или
+  `sessionStorage` не нужно и нельзя;
+- `Secure` — отправляется только по HTTPS (в проде — `https://clicker.asphalt.by`);
+- `SameSite=Lax` — обычные same-origin запросы работают;
+- `Path=/api/v1` — покрывает и `/api/v1/auth/refresh-token`, и `/api/v1/logout`.
 
 ### Важно про refresh
 
-- Refresh-токен передаётся **в заголовке** `Authorization: Bearer <refresh_token>`, тела нет.
+- Refresh-токен передаётся **не в заголовке**, а в cookie. Тела нет, `Authorization`
+  не нужен. В браузере обязателен `credentials: 'include'`.
+- `refresh_token` **не приходит в JSON**. Если фронт ждёт поле `refresh_token` в ответе —
+  его там больше нет.
 - Refresh-токен **не подходит** для защищённых эндпоинтов: gateway пропускает только токены
   с типом `ACCESS`.
-- При обновлении refresh-токен **ротируется**: старый сразу становится недействительным.
-  Поэтому два параллельных refresh (например, из двух вкладок) приведут к ошибке одного из них.
-  Делайте single-flight: один refresh на всё приложение/вкладки.
+- При обновлении refresh-токен **ротируется**: старый сразу становится недействительным,
+  в ответ приходит новый `Set-Cookie`. Поэтому два параллельных refresh (например, из двух
+  вкладок) приведут к ошибке одного из них. Делайте single-flight: один refresh на всё
+  приложение/вкладки.
+- Logout требует живой access token: gateway по нему определяет пользователя. Если access
+  истёк — сначала refresh, потом logout. Локальную сессию чистите в любом случае.
 
 ### Рекомендуемая обработка 401
 
 ```js
 // Псевдокод
 async function authorizedFetch(url, options) {
-  let response = await fetch(url, withAuth(options));
+  let response = await fetch(url, withAuth(options)); // credentials: 'include'
 
   if (response.status === 401) {
     const refreshed = await refreshOnce(); // single-flight
     if (!refreshed) {
       clearSession();
-      location.replace("index.html");
+      location.replace("/login");
       return response;
     }
     response = await fetch(url, withAuth(options)); // один повтор
@@ -129,9 +168,22 @@ async function authorizedFetch(url, options) {
 
   return response;
 }
+
+async function refreshOnce() {
+  const response = await fetch(`${BASE}/api/v1/auth/refresh-token`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) return false;
+  const { access_token } = await response.json();
+  saveAccessToken(access_token);
+  return true;
+}
 ```
 
 Не пытайтесь обновлять токен при 401 на `/api/v1/auth/**` — это приведёт к циклу.
+Отдельно: `401` на `/api/v1/auth/authenticate` — это неверный email/пароль, а не
+истёкшая сессия.
 
 ---
 
@@ -141,8 +193,8 @@ async function authorizedFetch(url, options) {
 
 #### `POST /api/v1/auth/register`
 
-Создаёт пользователя и сразу возвращает токены. Роль всегда `USER`; поле `role` в запросе
-не поддерживается (можно не отправлять).
+Создаёт пользователя, сразу выдаёт `access_token` и устанавливает refresh-cookie.
+Роль всегда `USER`; поле `role` в запросе не поддерживается (можно не отправлять).
 
 **Auth:** не требуется.
 
@@ -164,10 +216,12 @@ async function authorizedFetch(url, options) {
 
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiJ9...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiJ9..."
+  "access_token": "eyJhbGciOiJIUzI1NiJ9..."
 }
 ```
+
+Плюс заголовок `Set-Cookie` с refresh-токеном (`HttpOnly; Secure; SameSite=Lax; Path=/api/v1`).
+Поля `refresh_token` в теле нет.
 
 **Ошибки:** `400` — невалидные данные или email уже занят; `409` — гонка при одновременной
 регистрации того же email; `429` — rate limit.
@@ -191,7 +245,7 @@ async function authorizedFetch(url, options) {
 }
 ```
 
-**200 OK** — та же пара токенов, что у регистрации.
+**200 OK** — только `access_token`, как у регистрации, плюс `Set-Cookie` с refresh-токеном.
 
 **Ошибки:** `400` — невалидное тело; `401` — неверный email/пароль; `429` — rate limit.
 
@@ -199,9 +253,10 @@ async function authorizedFetch(url, options) {
 
 #### `POST /api/v1/auth/refresh-token`
 
-Обменивает refresh token на новую пару токенов.
+Обменивает refresh-токен из cookie на новый `access_token`.
 
-**Auth:** `Authorization: Bearer <refresh_token>`
+**Auth:** не требуется заголовок. Refresh-токен читается из cookie `refresh_token`,
+поэтому в браузере обязателен `credentials: 'include'`.
 
 **Тело:** отсутствует.
 
@@ -209,36 +264,40 @@ async function authorizedFetch(url, options) {
 
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiJ9...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiJ9..."
+  "access_token": "eyJhbGciOiJIUzI1NiJ9..."
 }
 ```
 
-**Ошибки:** `401` — заголовок отсутствует, токен невалиден/истёк/уже ротирован/удалён.
-При отсутствии заголовка ответ может быть с пустым телом.
+Плюс `Set-Cookie` с **новым** refresh-токеном (ротация: старый инвалидируется).
+
+**Ошибки:** `401` — cookie отсутствует, токен невалиден/истёк/уже ротирован/удалён.
+Если cookie не пришла, тело ответа пустое.
 
 ---
 
 #### `POST /api/v1/logout`
 
-Инвалидирует текущую сессию.
+Инвалидирует текущую сессию: access token уходит в blacklist, refresh-токен удаляется
+на сервере, cookie очищается.
 
-**Auth:** `Authorization: Bearer <access_token>`
+**Auth:** `Authorization: Bearer <access_token>` **и** cookie `refresh_token`
+(браузер отправляет её сам). Access token нужен gateway-у, чтобы определить пользователя
+и передать `X-User-Name`.
 
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiJ9...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiJ9..."
+  "access_token": "eyJhbGciOiJIUzI1NiJ9..."
 }
 ```
 
-**200 OK** — пустое тело.
+**200 OK** — пустое тело + `Set-Cookie: refresh_token=; Path=/api/v1; Max-Age=0; HttpOnly; Secure; SameSite=Lax`.
 
-**Ошибки:** `400` — не переданы токены; `401` — access token невалиден/истёк/уже в blacklist,
-refresh token неизвестен или принадлежит другому пользователю.
+**Ошибки:** `400` — refresh-cookie не пришла; `401` — access token невалиден/истёк/уже в blacklist,
+refresh-токен неизвестен или принадлежит другому пользователю.
 
 > После logout access token нельзя использовать до истечения его срока (он в blacklist).
 > Локальные токены нужно удалить в любом случае, даже если запрос logout не удался.
+> Если access token уже истёк, сначала вызовите `refresh-token`, иначе logout вернёт `401`.
 
 ---
 
@@ -515,7 +574,7 @@ GET /transfers  ◄──────── статус SUCCESS / FAILED ◄─
 |---|---|
 | `200` | успешный синхронный запрос |
 | `202` | перевод принят в асинхронную обработку |
-| `400` | валидация, перевод себе, баланс не найден, дубль email |
+| `400` | валидация, перевод себе, баланс не найден, дубль email, отсутствие refresh-cookie в logout |
 | `401` | нет/просрочен/невалиден токен, неверный логин, пользователь не найден |
 | `403` | недостаточно прав (в обычном флоу не встречается) |
 | `404` | неверный путь (нет такого route в gateway) |
@@ -548,21 +607,27 @@ GET /transfers  ◄──────── статус SUCCESS / FAILED ◄─
 
 ### CORS
 
-Сейчас gateway разрешает **только**:
+Gateway разрешает следующие origin:
 
 - `http://localhost:5500`
 - `http://127.0.0.1:5500`
+- `http://localhost:8085`
+- `http://127.0.0.1:8085`
+- `https://clicker.asphalt.by`
+
+Список задаётся переменной `CORS_ALLOWED_ORIGINS` (через запятую).
 
 Разрешены методы `GET, POST, PUT, DELETE, PATCH, OPTIONS`, любые заголовки,
-`credentials: true`. Preflight `OPTIONS` проходит без авторизации.
+`Access-Control-Allow-Credentials: true`. Preflight `OPTIONS` проходит без авторизации.
 
 Следствия:
 
+- в production фронт и API на одном origin (`https://clicker.asphalt.by`), CORS не участвует;
+- при кросс-origin запросах (например, `localhost:5500` → `localhost:8080`) обязателен
+  `credentials: 'include'`, иначе браузер не сохранит `Set-Cookie` и не отправит cookie;
 - открывать фронт через `file://` нельзя — origin будет `null`, браузер заблокирует запросы;
-- Vite на `5173` или webpack на `3000` по умолчанию **не пройдут CORS**;
-- для локальной разработки используйте порт `5500` (например, Live Server) или попросите
-  бэкенд добавить ваш origin в `CorsConfig`;
-- для деплоя понадобится добавить боевой домен в `CorsConfig`.
+- Vite на `5173` или webpack на `3000` по умолчанию **не пройдут CORS** — используйте
+  `8085` (Docker-фронт) / `5500` или добавьте свой origin в `CORS_ALLOWED_ORIGINS`.
 
 ---
 
@@ -573,7 +638,22 @@ GET /transfers  ◄──────── статус SUCCESS / FAILED ◄─
 | Поле | Тип | Описание |
 |---|---|---|
 | `access_token` | string | JWT, ~15 минут |
-| `refresh_token` | string | JWT, ~7 дней, одноразовый (ротируется) |
+
+Refresh-токен в теле не передаётся. Он приходит в `Set-Cookie` (`refresh_token`,
+~7 дней, одноразовый, ротируется) и хранится браузером как HttpOnly cookie.
+
+### RefreshTokenCookie
+
+| Свойство | Значение |
+|---|---|
+| Имя | `refresh_token` |
+| `HttpOnly` | да — недоступна из JavaScript |
+| `Secure` | да — только по HTTPS |
+| `SameSite` | `Lax` |
+| `Path` | `/api/v1` |
+| `Max-Age` | `refreshTokenExpiration / 1000` секунд (по умолчанию 7 дней) |
+| Установка | `register`, `authenticate`, `refresh-token` |
+| Удаление | `logout` (`Max-Age=0`) |
 
 ### UserProfile
 
@@ -621,18 +701,23 @@ GET /transfers  ◄──────── статус SUCCESS / FAILED ◄─
 
 ## Чек-лист интеграции
 
-- [ ] Все запросы идут на `http://localhost:8080`, не на порты сервисов.
-- [ ] `Content-Type: application/json` на `POST`/`PATCH`.
+- [ ] Все запросы идут на gateway (`http://localhost:8080` локально,
+  `https://clicker.asphalt.by` в проде), не на порты сервисов.
+- [ ] `Content-Type: application/json` на `POST`/`PATCH` с телом.
+- [ ] `credentials: 'include'` во всех `fetch`.
 - [ ] Access token в `Authorization: Bearer ...` на защищённых эндпоинтах.
-- [ ] Refresh token **не** используется для обычных запросов.
-- [ ] Refresh — single-flight, с заменой обоих токенов.
-- [ ] На `401` — один refresh + один повтор, затем logout.
+- [ ] `refresh_token` не читается из JSON и не хранится в `localStorage`/`sessionStorage`.
+- [ ] Refresh-токен **не** отправляется в `Authorization` и не кладётся в тело logout.
+- [ ] Refresh — single-flight, с сохранением нового `access_token` из ответа.
+- [ ] На `401` — один refresh + один повтор, затем logout/логин.
+- [ ] `401` на `/authenticate` показывается как «неверный email или пароль», без refresh.
+- [ ] Перед logout при истёкшем access token выполняется refresh.
 - [ ] Кнопка клика throttled (≤ 10 req/s), кнопка перевода блокируется на время запроса.
 - [ ] После регистрации баланс запрашивается с retry/backoff.
 - [ ] Перевод показывается как `PENDING`, затем polling до `SUCCESS`/`FAILED`.
 - [ ] Баланс и история обновляются после терминального статуса перевода.
 - [ ] `429` обрабатывается backoff-ом.
-- [ ] Локальная разработка — через `http://localhost:5500` (CORS).
+- [ ] Локальная разработка — через разрешённый origin (`8085` / `5500`, CORS).
 - [ ] `X-User-Name` вручную не отправляется.
 - [ ] Обновление профиля на сервере отсутствует — не показывайте ложное «сохранено».
 
@@ -647,7 +732,7 @@ GET /transfers  ◄──────── статус SUCCESS / FAILED ◄─
 5. **Нет причины отказа перевода** — в ответе только `status: FAILED`, без кода/текста ошибки.
 6. **Нет отмены перевода** после создания.
 7. **Ограничение `balance_increase` не валидируется сервером** — клиент должен отправлять `1`.
-8. **CORS ограничен двумя localhost-origin** — см. раздел CORS.
+8. **CORS ограничен списком origin в `CORS_ALLOWED_ORIGINS`** — см. раздел CORS.
 9. **Нет WebSocket/SSE** — статусы только polling-ом.
 10. **Публичные данные** — email и баланс видны в лидерборде, баланс читается по email.
 
