@@ -1,12 +1,11 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { clearTokens, api } from '../lib/api';
 import { clearUser } from '../lib/session';
 import { Icon } from './Icon';
 import type { ReactNode } from 'react';
 
-export function Layout({ children, user }: { children: ReactNode; user: { nickname: string; email: string } }) {
-  const navigate = useNavigate();
-  const logout = async () => { try { await api.logout(); } catch { /* local session still must end */ } clearTokens(); clearUser(); navigate('/login', { replace: true }); };
+export function Layout({ children, user, onSignedOut }: { children: ReactNode; user: { nickname: string; email: string }; onSignedOut: () => void }) {
+  const logout = async () => { try { await api.logout(); } catch { /* local session still must end */ } clearTokens(); clearUser(); onSignedOut(); };
   return <div className="app-shell">
     <a className="skip-link" href="#content">К содержимому</a>
     <header className="topbar"><Link className="brand" to="/"><span className="brand-mark">A</span><span>asphalt<span className="brand-muted">.by</span></span></Link>

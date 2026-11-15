@@ -1,15 +1,30 @@
 import type { ApiError, AuthTokens, Balance, LeaderboardItem, Transfer, User } from '../types';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || 'http://localhost:8080';
-const AUTH_KEY = 'asphalt-clicker-auth';
-let tokens: AuthTokens | null = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+const ACCESS_KEY = 'asphalt-clicker-access';
+const REFRESH_KEY = 'asphalt-clicker-refresh';
+localStorage.removeItem('asphalt-clicker-auth');
+let tokens: AuthTokens | null = (() => {
+  const accessToken = sessionStorage.getItem(ACCESS_KEY);
+  const refreshToken = sessionStorage.getItem(REFRESH_KEY);
+  return accessToken && refreshToken ? { access_token: accessToken, refresh_token: refreshToken } : null;
+})();
 let refreshFlight: Promise<AuthTokens> | null = null;
 let onSessionExpired: (() => void) | null = null;
 
 export function setSessionExpiredHandler(handler: () => void) { onSessionExpired = handler; }
 export function getTokens() { return tokens; }
-export function saveTokens(next: AuthTokens) { tokens = next; localStorage.setItem(AUTH_KEY, JSON.stringify(next)); }
-export function clearTokens() { tokens = null; localStorage.removeItem(AUTH_KEY); }
+export function saveTokens(next: AuthTokens) {
+  tokens = next;
+  sessionStorage.setItem(ACCESS_KEY, next.access_token);
+  sessionStorage.setItem(REFRESH_KEY, next.refresh_token);
+}
+export function clearTokens() {
+  tokens = null;
+  sessionStorage.removeItem(ACCESS_KEY);
+  sessionStorage.removeItem(REFRESH_KEY);
+}
+export function hasSession() { return Boolean(tokens?.access_token); }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 function messageFor(status: number, category?: string) {
@@ -69,7 +84,7 @@ export const api = {
   transfers: () => request<{ transfers: Transfer[] }>('/api/v1/transfers'),
   createTransfer: (body: { target_user_email: string; transfer_amount: number; additional_message: string }) =>
     request<Transfer>('/api/v1/transfers', { method: 'POST', body: JSON.stringify(body) }),
-  logout: () => request<void>('/api/v1/logout', { method: 'POST', body: JSON.stringify({ access_token: tokens?.access_token || '', refresh_token: tokens?.refresh_token || '' }) }),
+  logout: () => request<void>('/api/v1/logout', { method: 'POST', body: JSON.stringify({ access_token: tokens?.access_token || '', refresh_token: tokens?.refresh_token || '' }) }, false),
 };
 
 export async function loadBalanceWithRetry(email: string) {

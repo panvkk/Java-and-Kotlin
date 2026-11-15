@@ -5,6 +5,6 @@ export type LeaderboardItem = { balance: number; user_nickname: string; user_ema
 export type TransferStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
 export type Transfer = {
   transfer_id: number; transfer_amount: number; initiator_email: string; target_email: string;
-  additional_message?: string | null; status: TransferStatus; created_at: string;
+  additional_message?: string | null; status: TransferStatus; created_at?: string; createdAt?: string;
 };
 export type ApiError = Error & { status?: number; category?: string };

@@ -16,7 +16,7 @@ import static com.kpanov.common.util.Constants.USERNAME_HEADER;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/transfers")
-public class    TransferController {
+public class TransferController {
     private final TransferService transferService;
     private final ControllerMappers mappers;
 
