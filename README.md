@@ -11,7 +11,7 @@
  
  -- Стек: Java 17, Spring Boot, Spring Security, Spring Cloud Gateway, Spring Data JPA, Apache Kafka, PostgreSQL, Redis, Docker Compose, JWT, OpenAPI/Swagger.
  
- -- Деплой: сервис доступен по собственному домену - [clicker.asphalt.by](clicker.asphalt.by).
+ -- Деплой: сервис доступен по собственному домену - [clicker.asphalt.by](https://clicker.asphalt.by).
  
  -- Достижения: 
  
