@@ -1,261 +1,81 @@
-# API Documentation
+# Film Catalog
 
-## Endpoints
+Учебный CRUD-сервис для управления каталогом фильмов и режиссёров. Проект
+реализован на чистом Kotlin с хранением данных в PostgreSQL.
 
-### GET /api/movies
-**Описание:** Получить список фильмов
+## Цель
 
-#### Параметры запроса (Query)
-| Имя | Тип | Обязательный |
-|:---|:---|:---:|
-| `title` | string | Нет |
-| `minimal_rating` | float | Нет |
+Разработать REST API для:
 
-#### Ответ (200 OK)
-`Array<MovieResponseDto>`
-```json
-[
-  {
-    "id": 1,
-    "title": "string",
-    "year": 0,
-    "rating": 0.0,
-    "director_id": 1,
-    "director_name": "string"
-  }
-]
+- создания, частичного обновления и удаления фильмов и режиссёров;
+- получения фильмов с фильтрацией по названию и минимальному рейтингу;
+- поиска режиссёров по имени;
+- получения фильмографии режиссёра.
+
+## Стек
+
+- Kotlin;
+- Spring Boot;
+- Spring Data JPA / Hibernate;
+- PostgreSQL;
+- Docker Compose;
+- OpenAPI / Swagger UI;
+- Gradle;
+- JUnit 5 и MockK.
+
+## Реализация
+
+- централизованная обработка ошибок;
+- управление транзакциями через `@Transactional`;
+- JPA-связи `ManyToOne` и `OneToMany` между фильмами и режиссёрами;
+- unit-тесты бизнес-логики на JUnit 5 и MockK;
+- валидация входных данных на сервисном уровне.
+
+## API
+
+Основные endpoint-ы:
+
+| Метод | Endpoint | Назначение |
+| --- | --- | --- |
+| `GET` | `/api/movies` | Список фильмов с фильтрацией |
+| `POST` | `/api/movies` | Создание фильма |
+| `PATCH` | `/api/movies/{movie_id}` | Частичное обновление фильма |
+| `DELETE` | `/api/movies/{movie_id}` | Удаление фильма |
+| `GET` | `/api/movies/{director_id}` | Фильмография режиссёра |
+| `GET` | `/api/directors` | Список режиссёров с поиском по имени |
+| `POST` | `/api/directors` | Создание режиссёра |
+| `PATCH` | `/api/directors/{director_id}` | Обновление режиссёра |
+| `DELETE` | `/api/directors/{director_id}` | Удаление режиссёра |
+
+После запуска документация доступна в Swagger UI:
+
+<http://localhost:8080/swagger-ui/index.html>
+
+## Запуск
+
+Требуются JDK 17+ и Docker.
+
+Запустить PostgreSQL:
+
+```bash
+docker compose up -d
 ```
 
----
+Запустить приложение:
 
-### POST /api/movies
-**Описание:** Создать фильм
-
-#### Тело запроса (Request Body)
-`CreateMovieRequestDto`
-```json
-{
-  "title": "string",
-  "year": 0,
-  "director_id": 1
-}
+```bash
+.\gradlew.bat bootRun
 ```
 
-#### Ответ (200 OK)
-`MovieResponseDto`
-```json
-{
-  "id": 1,
-  "title": "string",
-  "year": 0,
-  "rating": 0.0,
-  "director_id": 1,
-  "director_name": "string"
-}
+Сервис использует PostgreSQL на `localhost:5432`:
+
+- база: `cinema_db`;
+- пользователь: `postgres`;
+- пароль: `postgres_password`.
+
+Собрать проект и запустить тесты:
+
+```bash
+.\gradlew.bat build
+.\gradlew.bat test
 ```
-
----
-
-### DELETE /api/movies/{movie_id}
-**Описание:** Удалить фильм
-
-#### Параметры пути (Path)
-| Имя | Тип | Обязательный |
-|:---|:---|:---:|
-| `movie_id` | int64 | Да |
-
-#### Ответ (200 OK)
-`200 OK (Empty response)`
-
----
-
-### PATCH /api/movies/{movie_id}
-**Описание:** Обновить фильм
-
-#### Параметры пути (Path)
-| Имя | Тип | Обязательный |
-|:---|:---|:---:|
-| `movie_id` | int64 | Да |
-
-#### Тело запроса (Request Body)
-`UpdateMovieRequestDto`
-```json
-{
-  "title": "string",
-  "year": 0,
-  "rating": 0.0
-}
-```
-
-#### Ответ (200 OK)
-`MovieResponseDto`
-```json
-{
-  "id": 1,
-  "title": "string",
-  "year": 0,
-  "rating": 0.0,
-  "director_id": 1,
-  "director_name": "string"
-}
-```
-
----
-
-### GET /api/movies/{director_id}
-**Описание:** Получить фильмы режиссёра
-
-#### Параметры пути (Path)
-| Имя | Тип | Обязательный |
-|:---|:---|:---:|
-| `director_id` | int64 | Да |
-
-#### Ответ (200 OK)
-`Array<MovieResponseDto>`
-```json
-[
-  {
-    "id": 1,
-    "title": "string",
-    "year": 0,
-    "rating": 0.0,
-    "director_id": 1,
-    "director_name": "string"
-  }
-]
-```
-
----
-
-### GET /api/directors
-**Описание:** Получить список режиссёров
-
-#### Параметры запроса (Query)
-| Имя | Тип | Обязательный |
-|:---|:---|:---:|
-| `director_name` | string | Нет |
-
-#### Ответ (200 OK)
-`Array<DirectorResponseDto>`
-```json
-[
-  {
-    "id": 1,
-    "full_name": "string",
-    "birth_year": 0
-  }
-]
-```
-
----
-
-### POST /api/directors
-**Описание:** Создать режиссёра
-
-#### Тело запроса (Request Body)
-`CreateDirectorRequestDto`
-```json
-{
-  "full_name": "string",
-  "birth_year": 0
-}
-```
-
-#### Ответ (200 OK)
-`DirectorResponseDto`
-```json
-{
-  "id": 1,
-  "full_name": "string",
-  "birth_year": 0
-}
-```
-
----
-
-### DELETE /api/directors/{director_id}
-**Описание:** Удалить режиссёра
-
-#### Параметры пути (Path)
-| Имя | Тип | Обязательный |
-|:---|:---|:---:|
-| `director_id` | int64 | Да |
-
-#### Ответ (200 OK)
-`200 OK (Empty response)`
-
----
-
-### PATCH /api/directors/{director_id}
-**Описание:** Обновить режиссёра
-
-#### Параметры пути (Path)
-| Имя | Тип | Обязательный |
-|:---|:---|:---:|
-| `director_id` | int64 | Да |
-
-#### Тело запроса (Request Body)
-`UpdateDirectorRequestDto`
-```json
-{
-  "full_name": "string",
-  "birth_year": 0
-}
-```
-
-#### Ответ (200 OK)
-`DirectorResponseDto`
-```json
-{
-  "id": 1,
-  "full_name": "string",
-  "birth_year": 0
-}
-```
-
----
-
-## Schemas
-
-### CreateMovieRequestDto
-| Поле | Тип | Формат | Обязательное |
-|:---|:---|:---|:---:|
-| `title` | string | - | Да |
-| `year` | integer | int32 | Да |
-| `director_id` | integer | int64 | Да |
-
-### MovieResponseDto
-| Поле | Тип | Формат | Обязательное |
-|:---|:---|:---|:---:|
-| `id` | integer | int64 | Да |
-| `title` | string | - | Да |
-| `year` | integer | int32 | Да |
-| `rating` | number | float | Да |
-| `director_id` | integer | int64 | Да |
-| `director_name` | string | - | Да |
-
-### CreateDirectorRequestDto
-| Поле | Тип | Формат | Обязательное |
-|:---|:---|:---|:---:|
-| `full_name` | string | - | Да |
-| `birth_year` | integer | int32 | Да |
-
-### DirectorResponseDto
-| Поле | Тип | Формат | Обязательное |
-|:---|:---|:---|:---:|
-| `id` | integer | int64 | Да |
-| `full_name` | string | - | Да |
-| `birth_year` | integer | int32 | Да |
-
-### UpdateMovieRequestDto
-| Поле | Тип | Формат | Обязательное |
-|:---|:---|:---|:---:|
-| `title` | string | - | Да |
-| `year` | integer | int32 | Да |
-| `rating` | number | float | Да |
-
-### UpdateDirectorRequestDto
-| Поле | Тип | Формат | Обязательное |
-|:---|:---|:---|:---:|
-| `full_name` | string | - | Да |
-| `birth_year` | integer | int32 | Да |
