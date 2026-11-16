@@ -24,21 +24,9 @@ Money Pusher -- полноценный микросервисный backend иг
 ## Стек
 
 ### Backend
-
-- Java 17;
-- Spring Boot 4.1.2;
-- Spring Cloud Gateway и Spring WebFlux для API Gateway;
-- Spring MVC для бизнес-сервисов;
-- Spring Security;
-- Spring Data JPA / Hibernate;
-- PostgreSQL 16;
-- Apache Kafka для событий между сервисами;
-- Redis 8.4 для refresh-токенов, blacklist access-токенов и rate limiting;
-- JJWT 0.11.5 для работы с JWT;
-- Springdoc OpenAPI 3.1.0;
-- Spring Boot Actuator;
-- Lombok;
-- Gradle 8.14 с Kotlin DSL.
+- Java 17, Spring Boot 4.1.2, Spring Cloud Gateway и Spring WebFlux для API Gateway, Spring MVC для бизнес-сервисов, Spring Security, Spring Data JPA / Hibernate;
+- PostgreSQL 16, Apache Kafka для событий между сервисам, Redis 8.4 для refresh-токенов, blacklist access-токенов и rate limiting;
+- JJWT 0.11.5 для работы с JWT, Springdoc OpenAPI 3.1.0, Spring Boot Actuator, Lombok, Gradle 8.14 с Kotlin DSL.
 
 ### Frontend
 
