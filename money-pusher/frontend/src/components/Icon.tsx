@@ -1,8 +1,9 @@
-type Props = { name: 'arrow' | 'moon' | 'menu' | 'logout' | 'send' | 'user'; size?: number };
+type Props = { name: 'arrow' | 'moon' | 'sun' | 'menu' | 'logout' | 'send' | 'user'; size?: number };
 export function Icon({ name, size = 18 }: Props) {
   const paths = {
     arrow: <><path d="M5 12h13M13 6l6 6-6 6" /></>,
     moon: <path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z" />,
+    sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" /></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
     logout: <><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9" /></>,
     send: <><path d="m20 4-17 7 7 2 2 7 8-16ZM10 13l10-9" /></>,
