@@ -310,3 +310,6 @@ money-pusher/
 ├── build.gradle.kts
 └── settings.gradle.kts
 ```
+
+## License
+Code is MIT licensed, all visual assets and lore are All Rights Reserved
