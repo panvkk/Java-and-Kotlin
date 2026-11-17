@@ -14,6 +14,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
+import static com.kpanov.common.util.Constants.*;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -28,7 +30,7 @@ public class OutboxRelay {
     @Scheduled(fixedDelayString = "${outbox.relay-interval-ms:1000}")
     @Transactional
     public void relay() {
-        var batch = repository.lockPending(50);
+        var batch = repository.lockPending(OUTBOX_RELAY_LIMIT);
 
         for (var row : batch) {
             try {
@@ -36,7 +38,7 @@ public class OutboxRelay {
                 var event = objectMapper.readValue(row.getPayload(), eventClass);
 
                 kafkaTemplate.send(row.getTopic(), row.getAggregateId(), event)
-                        .get(5, TimeUnit.SECONDS);
+                        .get(SEND_TOPIC_GET_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
                 repository.markPublished(row.getId(), Instant.now(clock));
             } catch (InterruptedException e) {
@@ -52,7 +54,7 @@ public class OutboxRelay {
     @Transactional
     public void cleanup() {
         repository.deletePublishedBefore(
-                Instant.now(clock).minus(7, ChronoUnit.DAYS)
+                Instant.now(clock).minus(OUTBOX_EXPIRATION_DAYS, ChronoUnit.DAYS)
         );
     }
 }

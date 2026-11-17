@@ -3,6 +3,10 @@ package com.kpanov.common.util;
 import java.util.List;
 
 public class Constants {
+    public static final int OUTBOX_RELAY_LIMIT = 50;
+    public static final int SEND_TOPIC_GET_TIMEOUT_SECONDS = 5;
+    public static final int OUTBOX_EXPIRATION_DAYS = 7;
+
     public static final long MAX_ONCE_BALANCE_INCREASE = 5;
     public static final Integer LEADERBOARD_LENGTH = 10;
     public static final int MIN_JWT_SECRET_SIZE = 44;
