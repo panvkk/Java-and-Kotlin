@@ -38,12 +38,6 @@ public class BalanceService {
             return;
         }
 
-        var insertedRows = insertPhaseIfAbsent(transferId, TransferSagaPhase.DEDUCT, initiatorEmail, targetEmail, transferAmount);
-        if(insertedRows == 0) {
-            log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.DEDUCT.toString(), transferId));
-            return;
-        }
-
         var initiatorBalance = balanceRepository.getBalanceWithLock(initiatorEmail);
 
         if(initiatorBalance.isPresent()) {
@@ -51,6 +45,12 @@ public class BalanceService {
             var balanceRemain = entity.getBalance() - transferAmount;
 
             if(balanceRemain >= 0) {
+                var insertedRows = insertPhaseIfAbsent(transferId, TransferSagaPhase.DEDUCT, initiatorEmail, targetEmail, transferAmount);
+                if(insertedRows == 0) {
+                    log.warn(PROCESSED_SAGA_PHASE.formatted(TransferSagaPhase.DEDUCT.toString(), transferId));
+                    return;
+                }
+
                 balanceRepository.updateBalance(initiatorEmail, balanceRemain);
 
                 transferProducer.publishDeductionSuccess(

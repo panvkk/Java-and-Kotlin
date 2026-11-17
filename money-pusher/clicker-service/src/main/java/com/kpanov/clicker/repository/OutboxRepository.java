@@ -24,5 +24,5 @@ public interface OutboxRepository extends JpaRepository<OutboxEntity, Long> {
 
     @Modifying
     @Query("DELETE FROM OutboxEntity o WHERE o.publishedAt IS NOT NULL AND o.publishedAt < :before ")
-    int deletePublishedBefore(@Param("now") Instant before);
+    int deletePublishedBefore(@Param("before") Instant before);
 }

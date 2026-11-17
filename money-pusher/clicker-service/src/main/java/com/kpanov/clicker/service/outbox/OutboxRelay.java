@@ -29,7 +29,7 @@ public class OutboxRelay {
     @Scheduled(fixedDelayString = "${outbox.relay-interval-ms:1000}")
     @Transactional
     public void relay() {
-        var batch = outboxRepository.lockPending(OUTBOX_RELAY_LIMIT);
+        var batch = outboxRepository.lockPending(OUTBOX_RELAY_BATCH);
 
         for(var row : batch) {
             try {
@@ -43,14 +43,14 @@ public class OutboxRelay {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                log.error(e.getMessage());
+                log.error("Outbox relay failed: id={}, topic={}", row.getId(), row.getTopic(), e);
             }
         }
     }
 
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
-    public void cleanUp() {
+    public void cleanup() {
         outboxRepository.deletePublishedBefore(
                 Instant.now(clock).minus(OUTBOX_EXPIRATION_DAYS, ChronoUnit.DAYS)
         );

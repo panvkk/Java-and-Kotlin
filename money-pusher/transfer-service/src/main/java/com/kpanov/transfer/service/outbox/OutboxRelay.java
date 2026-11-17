@@ -30,7 +30,7 @@ public class OutboxRelay {
     @Scheduled(fixedDelayString = "${outbox.relay-interval-ms:1000}")
     @Transactional
     public void relay() {
-        var batch = repository.lockPending(OUTBOX_RELAY_LIMIT);
+        var batch = repository.lockPending(OUTBOX_RELAY_BATCH);
 
         for (var row : batch) {
             try {
@@ -45,7 +45,7 @@ public class OutboxRelay {
                 Thread.currentThread().interrupt();
                 return;
             } catch (Exception e) {
-                log.error(e.getMessage());
+                log.error("Outbox relay failed: id={}, topic={}", row.getId(), row.getTopic(), e);
             }
         }
     }
